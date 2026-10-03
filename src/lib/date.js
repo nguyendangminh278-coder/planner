@@ -25,8 +25,8 @@ export const fmtFull = (d) => d.toLocaleDateString('vi-VN', { weekday: 'short', 
 export function intersectsDay(start, end, day) {
   const a = new Date(start); const b = new Date(end);
   const ds = new Date(day); ds.setHours(0,0,0,0);
-  const de = new Date(day); de.setHours(23,59,59,999);
-  return a <= de && b >= ds;
+  const de = new Date(ds); de.setDate(de.getDate()+1);
+  return a < de && b > ds;
 }
 
 export function clipToWeek(start, end, days) {
