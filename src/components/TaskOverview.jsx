@@ -17,12 +17,12 @@ export function TaskList({ tasks, onSelect, onAdd, ownerName='' }) {
   </div></section>;
 }
 
-export function PlanningSummary({ tasks, events, onSelect, onShare, onClass, classOpen, ownerName='' }) {
+export function PlanningSummary({ tasks, events, onSelect, onShare, onClass, classOpen, ownerName='', calendarRange }) {
   const today = dateKey(new Date());
   const pending = tasks.filter(task => task.progress < 100);
   const next = pending.toSorted((a, b) => a.end.localeCompare(b.end)).slice(0, 4);
-  const todayEvents = events.filter(event => dateKey(new Date(event.start)) === today).length;
-  return <aside className="planning-side"><section className="planning-summary"><span className="eyebrow">PLANNING AT A GLANCE</span><h3>Nhịp làm việc của {ownerName || 'bạn'}</h3><div className="summary-counts"><span><b>{pending.length}</b>Việc đang chạy</span><span><b>{todayEvents}</b>Lịch hôm nay</span><span><b>{tasks.filter(task => task.progress >= 100).length}</b>Hoàn thành</span></div></section>
+  const todayEvents = events.filter(event => calendarRange ? Date.parse(event.start) < calendarRange.end.getTime() && Date.parse(event.end) > calendarRange.start.getTime() : dateKey(new Date(event.start)) === today).length;
+  return <aside className="planning-side"><section className="planning-summary"><span className="eyebrow">PLANNING AT A GLANCE</span><h3>Nhịp làm việc của {ownerName || 'bạn'}</h3><div className="summary-counts"><span><b>{pending.length}</b>Việc đang chạy</span><span><b>{todayEvents}</b>{calendarRange ? 'Lịch trong tuần' : 'Lịch hôm nay'}</span><span><b>{tasks.filter(task => task.progress >= 100).length}</b>Hoàn thành</span></div></section>
     <section className="next-deadlines"><h3><Clock3 size={17}/>Mốc cần chú ý</h3>{next.map(task => <button type="button" key={task.id} onClick={() => onSelect(task)}><span className="deadline-dot" style={{ background: task.color || '#ffe4e6' }}/><span><b>{task.title}</b><small>{task.end.split('-').reverse().join('/')}</small></span><ArrowUpRight size={14}/></button>)}{!next.length && <p className="empty-state">Chưa có mốc công việc.</p>}</section>
     {(onShare || onClass) && <section className="connected-calendars"><h3>Lịch kết nối</h3>{onShare && <button className="text-btn" onClick={onShare}>Chia sẻ lịch & công việc<ArrowUpRight size={15}/></button>}{onClass && <button className="text-btn" aria-expanded={classOpen} onClick={onClass}>Lịch & công việc lớp<ArrowUpRight size={15}/></button>}</section>}
   </aside>;

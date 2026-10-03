@@ -3,12 +3,29 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
     function owns(data) { return signedIn() && data.ownerId == request.auth.uid; }
+    function validRecurrence(rule) {
+      return rule == null || (rule is map
+        && rule.keys().hasAll(['frequency', 'interval', 'weekdays', 'monthlyMode', 'endType', 'untilDate', 'count'])
+        && rule.keys().hasOnly(['frequency', 'interval', 'weekdays', 'monthlyMode', 'endType', 'untilDate', 'count'])
+        && rule.frequency in ['daily', 'weekly', 'monthly', 'yearly']
+        && rule.interval is int && rule.interval >= 1 && rule.interval <= 99
+        && rule.weekdays is list && rule.weekdays.size() <= 7 && rule.weekdays.hasOnly([1,2,3,4,5,6,7])
+        && (rule.frequency != 'weekly' || rule.weekdays.size() > 0)
+        && rule.monthlyMode in ['date', 'weekday']
+        && ((rule.endType == 'never' && rule.untilDate == null && rule.count == null)
+          || (rule.endType == 'until' && rule.untilDate is string && rule.untilDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') && rule.count == null)
+          || (rule.endType == 'count' && rule.count is int && rule.count >= 1 && rule.count <= 1000 && rule.untilDate == null)));
+    }
     function validEvent(data) {
       return data.keys().hasAll(['ownerId', 'title', 'start', 'end', 'color'])
-        && data.keys().hasOnly(['ownerId', 'owner', 'title', 'start', 'end', 'color', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerId', 'owner', 'title', 'start', 'end', 'color', 'createdAt', 'updatedAt', 'allDay', 'timeZone', 'recurrence'])
         && data.title is string && data.title.size() > 0 && data.title.size() <= 200
         && data.start is string && data.end is string && data.start < data.end
-        && data.color is string;
+        && data.color is string
+        && (!('allDay' in data) || data.allDay is bool)
+        && (!('timeZone' in data) || (data.timeZone is string && data.timeZone.size() > 0 && data.timeZone.size() <= 100))
+        && (!('recurrence' in data) || validRecurrence(data.recurrence))
+        && (!(('recurrence' in data && data.recurrence != null) || ('allDay' in data && data.allDay)) || 'timeZone' in data);
     }
     function validTask(data) {
       return data.keys().hasAll(['ownerId', 'title', 'start', 'end', 'progress', 'details', 'steps', 'color'])

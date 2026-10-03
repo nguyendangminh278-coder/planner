@@ -17,7 +17,7 @@ function TaskLinks({task, days}) {
   const steps = task.steps || [], height = 48 * (steps.length + 1);
   const stem = parent.startIndex * 100 + 12;
   const visible = steps.map((step, index) => ({ span: clipToWeek(step.start, step.end, days), index })).filter(step => step.span);
-  return <svg className="task-links" viewBox={`0 0 600 ${height}`} preserveAspectRatio="none" style={{height}} aria-hidden="true">
+  return <svg className="task-links" viewBox={`0 0 ${days.length*100} ${height}`} preserveAspectRatio="none" style={{height}} aria-hidden="true">
     {visible.map(({span,index}) => <path key={`parent-${index}`} d={`M ${stem} 24 V ${72 + index*48} H ${span.startIndex*100+12}`} className="parent-connector"/>)}
     {steps.slice(1).map((step,index) => {
       const previous = clipToWeek(steps[index].start, steps[index].end, days), next = clipToWeek(step.start, step.end, days);
@@ -28,7 +28,7 @@ function TaskLinks({task, days}) {
 
 export default function TaskTimeline({days, tasks, onSelect, readOnly=false}) {
   const [open,setOpen]=useState({});
-  return <section className="timeline-section">
+  return <section className="timeline-section" style={{'--week-count':days.length}}>
     <div className="section-head"><div><span className="eyebrow">3-LEVEL TODO</span><h2>Việc đang chạy</h2></div><p>Bậc 1 ở trên, các bước bậc 2 chạy nối tiếp bên dưới; click để xem nội dung chi tiết bậc 3.</p></div>
     <div className="timeline-head"><span>Công việc</span>{days.map(d=><span key={dateKey(d)}>{d.toLocaleDateString('vi-VN',{weekday:'short'})}<b>{d.getDate()}</b></span>)}</div>
     <div className="timeline-body">

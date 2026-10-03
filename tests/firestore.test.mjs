@@ -130,3 +130,23 @@ test('moods remain private even when a calendar is shared; spoofing and malforme
   await assertFails(setDoc(doc(db, ...path), { ...entry, moodId: 'invalid' }));
   await assertFails(setDoc(doc(db, ...path), { ...entry, note: 'x'.repeat(4001) }));
 });
+
+test('recurring and all-day series can be stored once and read by granted viewers without editing rights', async () => {
+  const db = dbFor('alice');
+  const recurrence = { frequency:'weekly', interval:2, weekdays:[1,3], monthlyMode:'date', endType:'count', untilDate:null, count:13 };
+  await assertSucceeds(setDoc(doc(db,'events','series'), { ...event, allDay:false, timeZone:'Asia/Bangkok', recurrence }));
+  await assertSucceeds(setDoc(doc(db,'events','all-day'), { ...event, allDay:true, timeZone:'Asia/Bangkok', recurrence:null }));
+  await setDoc(shareRef(db),share);
+  const shared = await assertSucceeds(getDoc(doc(dbFor('bob'),'events','series')));
+  assert.equal(shared.data().recurrence.count,13);
+  await assertFails(updateDoc(doc(dbFor('bob'),'events','series'),{recurrence:null}));
+});
+test('invalid recurrence maps and missing timezone fields are rejected, including malformed intervals and endpoints', async () => {
+  const db = dbFor('alice'), ref = doc(db,'events','invalid-series');
+  const recurrence = { frequency:'weekly', interval:1, weekdays:[6], monthlyMode:'date', endType:'never', untilDate:null, count:null };
+  await assertFails(setDoc(ref,{...event,recurrence}));
+  for (const bad of [ {...recurrence,interval:0}, {...recurrence,weekdays:[]}, {...recurrence,weekdays:[8]}, {...recurrence,frequency:'unknown'}, {...recurrence,endType:'count',count:0}, {...recurrence,endType:'until',untilDate:'bad'}, {...recurrence,extra:'not allowed'} ]) {
+    await assertFails(setDoc(ref,{...event,timeZone:'Asia/Bangkok',recurrence:bad}));
+  }
+  await assertFails(setDoc(ref,{...event,allDay:'yes',recurrence:null}));
+});

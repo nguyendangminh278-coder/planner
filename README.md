@@ -38,8 +38,21 @@ npm run preview
 - Hồ sơ người dùng chỉ chủ tài khoản truy cập được.
 - Firebase Analytics với measurement ID đã cung cấp; không làm gián đoạn ứng dụng khi trình duyệt không hỗ trợ hoặc chặn analytics.
 - Chế độ demo tách riêng khỏi dữ liệu thật. Thay đổi demo chỉ tồn tại trong phiên hiện tại.
-- Lịch tuần Thứ 2–Thứ 7, hiển thị 24 giờ; cuộn mặc định đến 08:00.
+- Lịch tuần Thứ 2–Thứ 7, có thể bật Chủ nhật, hiển thị 24 giờ; cuộn mặc định đến 08:00.
+- Lịch cả ngày/nhiều ngày và lịch lặp theo ngày, tuần, tháng, năm với thời điểm kết thúc tùy chỉnh.
 - Lịch nhóm từ API tùy chọn, có kiểm tra phản hồi và thông báo lỗi.
+
+## Lặp lại lịch
+
+Trong **Thêm lịch / Sửa lịch**, menu **Lặp lại** có Không lặp lại, Hằng ngày, Hằng tuần vào thứ đang chọn, Hằng tháng vào thứ thứ n của tháng, Hằng năm và Mọi ngày trong tuần (T2–T6).
+
+Chọn **Tùy chỉnh…** để đặt khoảng lặp 1–99 ngày/tuần/tháng/năm, chọn nhiều thứ T2–CN nếu lặp theo tuần, hoặc chọn ngày trong tháng / thứ thứ n nếu lặp theo tháng. Kết thúc **Không bao giờ**, **Vào ngày** (bao gồm ngày đó) hoặc **Sau** 1–1.000 lần xuất hiện. Số lần tính từ lần xuất hiện đầu tiên khớp quy tắc, không khởi động lại khi chuyển tuần.
+
+Mỗi chuỗi lưu một document Firestore, cùng `timeZone` IANA và map `recurrence`; ứng dụng chỉ dựng các lần xuất hiện thuộc tuần đang xem bằng RRule. Giờ lặp giữ theo múi giờ lúc tạo, kể cả khi đổi giờ mùa hè. Ngày 31 và ngày 29/2 bỏ qua tháng/năm không có ngày đó. Thứ thứ năm của tháng chỉ xuất hiện ở tháng có lần thứ năm đó.
+
+**Cả ngày** có ngày kết thúc bao gồm ngày đang chọn; dữ liệu lưu mốc kết thúc ở đầu ngày kế tiếp. Lịch cả ngày giữ cùng ngày lịch khi người xem ở múi giờ khác. **Hiện Chủ nhật** thêm cột thứ bảy của tuần; tự bật khi lưu lịch bắt đầu hoặc lặp vào Chủ nhật.
+
+Lịch lặp xuất hiện trong cả hai kiểu xem và planner được chia sẻ. Đối chiếu và khoảng trống chung tính cả từng lần lặp và lịch cả ngày. Sửa/xóa từ bất kỳ lần xuất hiện nào hiện áp dụng cho **toàn bộ chuỗi**; chưa hỗ trợ ngoại lệ cho một lần riêng lẻ.
 
 ## Giao diện và thời tiết cảm xúc từ todolist-main
 
@@ -92,7 +105,7 @@ Config web Firebase là cấu hình công khai, không phải khóa Admin/servic
 4. Mặc định xem riêng planner người đó. Bật **Đối chiếu với lịch của tôi** để hiển thị hai lịch cùng tuần: lịch của mình màu cyan, lịch người kia màu indigo. Lưới giờ chia hai cột nhỏ để hai nguồn không che nhau. Công việc vẫn hiển thị riêng theo chủ planner đang xem.
 5. Mục **Cả hai cùng trống** lấy hợp các thời gian bận của hai lịch rồi tìm phần trống còn lại. Có thể chọn giờ bắt đầu/kết thúc và khoảng trống tối thiểu 15/30/60 phút; mặc định 08:00–18:00, ít nhất 30 phút.
 
-Khoảng trống chỉ tính từ lịch cá nhân có giờ lưu trong Planner. Công việc kéo dài nhiều ngày không được coi là bận cả ngày; nguồn lịch lớp/API xem riêng không dùng để suy ra thời gian bận cá nhân. Chỉ hiển thị kết quả khi đã tải đủ hai lịch. Nếu dữ liệu lịch có thời gian không hợp lệ, hiển thị lỗi thay vì cho rằng cả hai đều trống.
+Khoảng trống tính từ lịch cá nhân lưu trong Planner, gồm từng lần xuất hiện của lịch lặp và lịch cả ngày. Công việc kéo dài nhiều ngày không được coi là bận cả ngày; nguồn lịch lớp/API xem riêng không dùng để suy ra thời gian bận cá nhân. Chỉ hiển thị kết quả khi đã tải đủ hai lịch. Nếu dữ liệu lịch có thời gian hoặc cấu hình lặp không hợp lệ, hiển thị lỗi thay vì cho rằng cả hai đều trống.
 
 Khi thu hồi quyền, người nhận không đọc được lịch/công việc nữa; giao diện ngừng hiển thị planner đã thu hồi và trở về planner của mình. Các tài khoản khác không có grant vẫn bị chặn. Nhật ký cảm xúc và hồ sơ tài khoản vẫn riêng tư. Grant hiện tại `permission=read` bao gồm lịch, công việc và nội dung trong các bước.
 
@@ -100,7 +113,7 @@ Chế độ demo có một planner Bùi Duy Tiến để thử xem riêng, đố
 
 ## Dữ liệu Firestore
 
-- `events/{id}`: lịch riêng của `ownerId`, thời gian ISO UTC, title, color, owner, timestamps.
+- `events/{id}`: lịch riêng của `ownerId`, thời gian ISO UTC, title, color, owner, timestamps; tùy chọn allDay, timeZone và recurrence (frequency, interval, weekdays ISO 1–7, monthlyMode, endType, untilDate, count). Lịch cũ không có trường mới vẫn dùng được.
 - `tasks/{id}`: công việc riêng của `ownerId`, ngày `YYYY-MM-DD`, progress, details, color, timestamps và mảng steps. Mỗi công việc tối đa 30 bước.
 - `profiles/{uid}`: displayName, email, photoURL, updatedAt.
 - `calendarShares/{ownerUid}/viewers/{emailLowercase}`: ownerId, ownerName, viewerEmail, permission=`read`, createdAt.
@@ -123,7 +136,7 @@ Chọn **Xem lịch & task lớp** trên thanh công cụ để mở bảng riê
 - Chỉ đọc các mục `type=general`; bỏ các mục nội bộ có tên bắt đầu `__`. Mặc định hiển thị mục chung không thuộc nhóm. Người dùng có thể chọn nhóm công khai khác.
 - Không gửi dữ liệu/tokens Firebase sang Supabase, không ghi/sửa/xóa trên database lớp và không chuyển các mục lớp vào Firestore.
 - Các mục từ nguồn này chưa có giờ bắt đầu/kết thúc, tiến độ hoặc bước con. Giao diện hiển thị ngày đúng dữ liệu và chi tiết/tài liệu gốc, không tạo giờ hoặc tiến độ giả.
-- Lịch lớp dùng cùng tuần Thứ 2–Thứ 7 đang xem. Deadline ngoài tuần này (bao gồm Chủ nhật) có thể xem qua bộ lọc Từ hôm nay hoặc Tất cả ngày.
+- Lịch lớp dùng cùng tuần đang xem, gồm Chủ nhật khi bật cột đó. Deadline ngoài tuần có thể xem qua bộ lọc Từ hôm nay hoặc Tất cả ngày.
 
 Khóa publishable chỉ hoạt động trong quyền SELECT/RLS của Supabase; nếu quyền đọc thay đổi, bảng lớp hiển thị lỗi riêng, còn planner cá nhân tiếp tục hoạt động. Không cần cài SDK Supabase để đọc REST API này.
 
@@ -156,6 +169,7 @@ Website: `https://nguyendangminh278-coder.github.io/planner/`. Miền `nguyendan
 
 ```bash
 npm run build
+npm test
 npm run test:rules
 npm audit --omit=dev
 ```

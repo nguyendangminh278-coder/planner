@@ -6,6 +6,7 @@ export const dayPalette = [
   { background: '#ecfdf5', header: '#d1fae5', border: '#a7f3d0', ink: '#047857' },
   { background: '#ecfeff', header: '#cffafe', border: '#a5f3fc', ink: '#0e7490' },
   { background: '#eef2ff', header: '#e0e7ff', border: '#c7d2fe', ink: '#4338ca' },
+  { background: '#faf5ff', header: '#f3e8ff', border: '#e9d5ff', ink: '#7e22ce' },
 ];
 
 export const plannerColors = [
