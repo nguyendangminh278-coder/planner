@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dist-pages/
+.env
+.env.*
+!.env.example
+.vercel/
+.firebase/
+*-debug.log*
+coverage/
+test-results/

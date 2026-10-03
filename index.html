@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f8fafc" />
+    <meta name="description" content="Planner — lịch tuần, công việc phân cấp và chia sẻ lịch với nhóm." />
+    <title>Planner</title>
+    <script type="module" crossorigin src="/planner/assets/index-DE-mGza-.js"></script>
+    <link rel="stylesheet" crossorigin href="/planner/assets/index-BEcmxctp.css">
+  </head>
+  <body>
+    <div id="root">
+      <section style="max-width:680px;margin:12vh auto;padding:32px;font-family:system-ui,sans-serif;line-height:1.7;color:#303b36;background:#fbfaf7;border-radius:24px">
+        <h1>Planner</h1>
+        <p id="boot-status">Đang mở lịch và công việc…</p>
+        <div id="local-help" style="display:none">
+          <p>Để mở ứng dụng trên máy, bấm đúp <b>start-planner.cmd</b> trong cùng thư mục. Trình duyệt sẽ tự mở Planner.</p>
+          <p>Nếu Planner đã chạy: <a href="http://localhost:5173/">mở Planner tại localhost:5173</a>.</p>
+          <p>Giữ cửa sổ khởi động đang chạy trong lúc sử dụng. Lần đầu cần kết nối Internet để tải các thư viện.</p>
+        </div>
+      </section>
+    </div>
+    <script>
+      if (location.protocol === 'file:') {
+        document.getElementById('boot-status').textContent = 'Bạn đang mở file mã nguồn. Planner cần được khởi động bằng máy chủ local để chạy React và đăng nhập Google.';
+        document.getElementById('local-help').style.display = 'block';
+      }
+    </script>
+  </body>
+</html>
