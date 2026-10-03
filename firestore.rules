@@ -30,7 +30,8 @@ service cloud.firestore {
       allow delete: if owns(resource.data);
     }
     match /tasks/{taskId} {
-      allow read, delete: if owns(resource.data);
+      allow read: if owns(resource.data) || sharedWithMe(resource.data.ownerId);
+      allow delete: if owns(resource.data);
       allow create: if owns(request.resource.data) && validTask(request.resource.data);
       allow update: if owns(resource.data) && owns(request.resource.data) && validTask(request.resource.data);
     }

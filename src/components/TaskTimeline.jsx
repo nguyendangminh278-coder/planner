@@ -26,7 +26,7 @@ function TaskLinks({task, days}) {
   </svg>;
 }
 
-export default function TaskTimeline({days, tasks, onSelect}) {
+export default function TaskTimeline({days, tasks, onSelect, readOnly=false}) {
   const [open,setOpen]=useState({});
   return <section className="timeline-section">
     <div className="section-head"><div><span className="eyebrow">3-LEVEL TODO</span><h2>Việc đang chạy</h2></div><p>Bậc 1 ở trên, các bước bậc 2 chạy nối tiếp bên dưới; click để xem nội dung chi tiết bậc 3.</p></div>
@@ -43,7 +43,7 @@ export default function TaskTimeline({days, tasks, onSelect}) {
           <SpanBar item={step} days={days} onSelect={()=>onSelect(task)}/>
         </div>)}
       </div>)}
-      {!tasks.length && <p className="empty-state">Chưa có công việc. Chọn “Thêm công việc” để bắt đầu.</p>}
+      {!tasks.length && <p className="empty-state">{readOnly ? 'Người này chưa có công việc.' : 'Chưa có công việc. Chọn “Thêm công việc” để bắt đầu.'}</p>}
     </div>
   </section>
 }

@@ -49,16 +49,23 @@ test('ownerId cannot be changed; malformed records cannot be saved', async () =>
   await assertFails(setDoc(doc(db, 'tasks', 'invalid'), { ...task, progress: 101 }));
   await assertFails(setDoc(doc(db, 'tasks', 'too-many'), { ...task, steps: Array(31).fill({}) }));
 });
-test('sharing permits calendar queries but keeps tasks private and denies writes', async () => {
+test('sharing permits the entire calendar and task tree but denies all viewer writes', async () => {
   await seed();
   await assertSucceeds(setDoc(shareRef(dbFor('alice')), share));
   const db = dbFor('bob');
   const result = await assertSucceeds(getDocs(query(collection(db, 'events'), where('ownerId', '==', 'alice'))));
   assert.equal(result.size, 1);
-  await assertFails(getDoc(doc(db, 'tasks', 'task')));
+  const sharedTask = await assertSucceeds(getDoc(doc(db, 'tasks', 'task')));
+  assert.equal(sharedTask.data().details, 'Private notes');
+  const taskResult = await assertSucceeds(getDocs(query(collection(db, 'tasks'), where('ownerId', '==', 'alice'))));
+  assert.equal(taskResult.size, 1);
+  await assertFails(updateDoc(doc(db, 'tasks', 'task'), { details: 'Changed by viewer' }));
+  await assertFails(deleteDoc(doc(db, 'tasks', 'task')));
+  await assertFails(setDoc(doc(db, 'tasks', 'spoofed'), task));
   await assertFails(updateDoc(doc(db, 'events', 'event'), { title: 'Hijacked' }));
   await assertFails(deleteDoc(doc(db, 'events', 'event')));
   await assertFails(getDoc(doc(dbFor('bob', false), 'events', 'event')));
+  await assertFails(getDoc(doc(dbFor('bob', false), 'tasks', 'task')));
 });
 test('only owners manage sharing; viewers only discover their own grants', async () => {
   await assertSucceeds(setDoc(shareRef(dbFor('alice')), share));
@@ -70,12 +77,29 @@ test('only owners manage sharing; viewers only discover their own grants', async
   await assertFails(deleteDoc(shareRef(db)));
   await assertSucceeds(getDocs(collection(dbFor('alice'), 'calendarShares', 'alice', 'viewers')));
 });
-test('revoking sharing immediately blocks further calendar reads', async () => {
+test('revoking sharing immediately blocks calendar and task reads', async () => {
   await seed();
   await setDoc(shareRef(dbFor('alice')), share);
   await assertSucceeds(getDoc(doc(dbFor('bob'), 'events', 'event')));
+  await assertSucceeds(getDoc(doc(dbFor('bob'), 'tasks', 'task')));
   await assertSucceeds(deleteDoc(shareRef(dbFor('alice'))));
   await assertFails(getDoc(doc(dbFor('bob'), 'events', 'event')));
+  await assertFails(getDoc(doc(dbFor('bob'), 'tasks', 'task')));
+  await assertFails(getDocs(query(collection(dbFor('bob'), 'tasks'), where('ownerId', '==', 'alice'))));
+});
+
+test('a grant to one owner does not expose other owners or their nested task notes', async () => {
+  await seed();
+  const step = { id: 'step', title: 'Private step', start: '2026-10-05', end: '2026-10-06', details: 'Step-level notes', progress: 50, color: '#d7e8ff' };
+  await env.withSecurityRulesDisabled(async context => {
+    await updateDoc(doc(context.firestore(), 'tasks', 'task'), { steps: [step] });
+    await setDoc(doc(context.firestore(), 'tasks', 'other-owner'), { ...task, ownerId: 'charlie' });
+  });
+  await setDoc(shareRef(dbFor('alice')), share);
+  const shared = await assertSucceeds(getDoc(doc(dbFor('bob'), 'tasks', 'task')));
+  assert.equal(shared.data().steps[0].details, 'Step-level notes');
+  await assertFails(getDoc(doc(dbFor('bob'), 'tasks', 'other-owner')));
+  await assertFails(getDocs(query(collection(dbFor('bob'), 'tasks'), where('ownerId', '==', 'charlie'))));
 });
 test('profiles stay private and only their owner can write', async () => {
   await assertSucceeds(setDoc(doc(dbFor('alice'), 'profiles', 'alice'), { displayName: 'Alice', email: 'alice@example.com', photoURL: '' }));

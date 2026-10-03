@@ -34,7 +34,7 @@ npm run preview
 - Đăng nhập/đăng xuất Google; khôi phục phiên đăng nhập.
 - Thêm, sửa, xóa lịch và đồng bộ realtime bằng Firestore.
 - Tạo, sửa, xóa công việc, các bước, tiến độ và nội dung/ghi chú bậc 3.
-- Chia sẻ toàn bộ lịch theo email Google đã xác minh; người xem không sửa được lịch và không xem được công việc/ghi chú. Có thể thu hồi quyền xem.
+- Chia sẻ toàn bộ lịch và công việc ba cấp theo email Google đã xác minh, gồm các bước và ghi chú. Người nhận chọn chủ lịch để xem riêng, với quyền chỉ đọc. Có thể thu hồi quyền xem.
 - Hồ sơ người dùng chỉ chủ tài khoản truy cập được.
 - Firebase Analytics với measurement ID đã cung cấp; không làm gián đoạn ứng dụng khi trình duyệt không hỗ trợ hoặc chặn analytics.
 - Chế độ demo tách riêng khỏi dữ liệu thật. Thay đổi demo chỉ tồn tại trong phiên hiện tại.
@@ -83,6 +83,20 @@ npx firebase deploy --only firestore --project calendar-f3d1b
 Config web Firebase là cấu hình công khai, không phải khóa Admin/service-account. Quyền dữ liệu được bảo vệ bởi Authentication và `firestore.rules`. Không đưa service-account JSON, mật khẩu hay API secret vào frontend/Git.
 
 Đăng nhập bằng hai tài khoản Google để kiểm tra lưu dữ liệu sau reload, chia sẻ, thu hồi quyền và dữ liệu riêng tư sau khi hoàn tất các bước trên.
+
+## Xem planner người khác và tìm khoảng trống chung
+
+1. Chủ planner chọn **Chia sẻ lịch & việc**, nhập email Google của người xem rồi cấp quyền.
+2. Người nhận đăng nhập bằng đúng email đó, chọn tên chủ planner trong **Xem lịch của**.
+3. Bảng lịch tuần, timeline, danh sách việc, tiến độ, các bước và ghi chú đều thuộc planner đang chọn. Người nhận chỉ xem; các thao tác tạo/sửa/xóa bị ẩn và Firestore cũng từ chối ghi lên dữ liệu người khác.
+4. Mặc định xem riêng planner người đó. Bật **Đối chiếu với lịch của tôi** để hiển thị hai lịch cùng tuần: lịch của mình màu cyan, lịch người kia màu indigo. Lưới giờ chia hai cột nhỏ để hai nguồn không che nhau. Công việc vẫn hiển thị riêng theo chủ planner đang xem.
+5. Mục **Cả hai cùng trống** lấy hợp các thời gian bận của hai lịch rồi tìm phần trống còn lại. Có thể chọn giờ bắt đầu/kết thúc và khoảng trống tối thiểu 15/30/60 phút; mặc định 08:00–18:00, ít nhất 30 phút.
+
+Khoảng trống chỉ tính từ lịch cá nhân có giờ lưu trong Planner. Công việc kéo dài nhiều ngày không được coi là bận cả ngày; nguồn lịch lớp/API xem riêng không dùng để suy ra thời gian bận cá nhân. Chỉ hiển thị kết quả khi đã tải đủ hai lịch. Nếu dữ liệu lịch có thời gian không hợp lệ, hiển thị lỗi thay vì cho rằng cả hai đều trống.
+
+Khi thu hồi quyền, người nhận không đọc được lịch/công việc nữa; giao diện ngừng hiển thị planner đã thu hồi và trở về planner của mình. Các tài khoản khác không có grant vẫn bị chặn. Nhật ký cảm xúc và hồ sơ tài khoản vẫn riêng tư. Grant hiện tại `permission=read` bao gồm lịch, công việc và nội dung trong các bước.
+
+Chế độ demo có một planner Bùi Duy Tiến để thử xem riêng, đối chiếu, khoảng trống và công việc chỉ đọc; không ghi dữ liệu mẫu vào Firebase.
 
 ## Dữ liệu Firestore
 

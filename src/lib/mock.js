@@ -17,6 +17,15 @@ export const demoSharedEvents = [
   { id:'s2', title:'Check tiến độ', start:'2026-10-09T13:30:00+07:00', end:'2026-10-09T14:30:00+07:00', color:'#f3e8ff', owner:'Bùi Duy Tiến' },
 ];
 
+export const demoSharedTasks = [{
+  id: 'peer-task', title: 'Chuẩn bị kế hoạch lớp', start: '2026-10-05', end: '2026-10-10', progress: 40, color: '#e0e7ff',
+  details: 'Tổng hợp kế hoạch học tập và phân công công việc cho nhóm.',
+  steps: [
+    { id: 'peer-step-1', title: 'Chốt nội dung', start: '2026-10-05', end: '2026-10-07', progress: 80, color: '#cffafe', details: 'Rà soát các mốc nộp bài và tài liệu cần chuẩn bị.' },
+    { id: 'peer-step-2', title: 'Phân công nhóm', start: '2026-10-08', end: '2026-10-10', progress: 10, color: '#d1fae5', details: 'Chia đầu việc, ghi chú từng bước và thống nhất người phụ trách.' },
+  ],
+}];
+
 export const demoTasks = [
   {
     id:'t1',

@@ -5,7 +5,7 @@ import { firebaseError } from '../lib/firebase';
 import ColorPicker from './ColorPicker';
 import { plannerColors } from '../lib/theme';
 
-export default function TaskDrawer({ item, onClose, onSave, onDelete }) {
+export default function TaskDrawer({ item, onClose, onSave, onDelete, readOnly=false, ownerName='' }) {
   const today = dateKey(new Date());
   const [form, setForm] = useState({ title: '', start: today, end: today, progress: 0, details: '', color: '#ffe4e6', steps: [], ...item });
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
@@ -23,6 +23,12 @@ export default function TaskDrawer({ item, onClose, onSave, onDelete }) {
     setBusy(true);
     try { await onDelete(item.id); onClose(); } catch (err) { setError(firebaseError(err)); } finally { setBusy(false); }
   }
+  if (readOnly) return <div className="drawer-backdrop" onClick={onClose}><aside className="drawer shared-task-detail" role="dialog" aria-modal="true" aria-label="Chi tiết công việc chỉ xem" onClick={e => e.stopPropagation()}>
+    <button className="icon-btn close" aria-label="Đóng" onClick={onClose}><X size={20}/></button><span className="eyebrow">CÔNG VIỆC CỦA {ownerName} · CHỈ XEM</span><h2>{item.title}</h2>
+    <p className="shared-task-dates">{item.start} → {item.end} · {item.progress || 0}% hoàn thành</p><p className="shared-task-notes">{item.details || 'Chưa có ghi chú.'}</p>
+    <h3>Các bước & nội dung chi tiết</h3>{item.steps?.map((step,index) => <article className="shared-step" key={step.id}><h4>{index+1}. {step.title}</h4><p>{step.start} → {step.end} · {step.progress || 0}%</p><div className="shared-task-notes">{step.details || 'Chưa có nội dung chi tiết.'}</div></article>)}
+    {!item.steps?.length && <p>Chưa có bước nhỏ.</p>}
+  </aside></div>;
   return <div className="drawer-backdrop" onClick={() => !busy && onClose()}><aside className="drawer" role="dialog" aria-modal="true" aria-label="Công việc" onClick={e => e.stopPropagation()}>
     <button className="icon-btn close" aria-label="Đóng" onClick={onClose} disabled={busy}><X size={20}/></button>
     <span className="eyebrow">CÔNG VIỆC 3 TẦNG</span><h2>{item?.id ? 'Cập nhật công việc' : 'Thêm công việc'}</h2>

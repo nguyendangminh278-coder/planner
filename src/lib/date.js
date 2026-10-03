@@ -33,6 +33,7 @@ export function clipToWeek(start, end, days) {
   const ws = new Date(days[0]); ws.setHours(0,0,0,0);
   const we = new Date(days[5]); we.setHours(23,59,59,999);
   const s = new Date(start); const e = new Date(end);
+  if (!Number.isFinite(s.getTime()) || !Number.isFinite(e.getTime()) || e < s) return null;
   if (e < ws || s > we) return null;
   const clippedS = s < ws ? ws : s;
   const clippedE = e > we ? we : e;
