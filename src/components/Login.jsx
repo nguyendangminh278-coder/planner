@@ -7,6 +7,8 @@ export default function Login({ onDemo }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [errorCode, setErrorCode] = useState('');
+  const localhostURL = new URL(location.href);
+  localhostURL.hostname = 'localhost';
   async function login() {
     setBusy(true); setError(''); setErrorCode('');
     try { await signInWithPopup(auth, googleProvider); }
@@ -22,6 +24,6 @@ export default function Login({ onDemo }) {
     {error && <div className="login-error" role="alert"><p className="error-message">{error}</p>{errorCode && <code>{errorCode}</code>}{authSetupErrors.has(errorCode) && <><a href="https://console.firebase.google.com/project/calendar-f3d1b/authentication/providers" target="_blank" rel="noopener noreferrer">Mở cấu hình đăng nhập Firebase</a><p>Bật Google, chọn email hỗ trợ và lưu. Trong Settings → Authorized domains, thêm <b>localhost</b>, <b>127.0.0.1</b> hoặc tên miền website đang dùng.</p></>}</div>}
     <button className="text-btn demo-btn" onClick={onDemo} disabled={busy}>Khám phá bản demo</button>
     <small>Đăng nhập để lưu lịch và công việc vào tài khoản của bạn.</small>
-    {location.hostname === '127.0.0.1' && <small>Bạn có thể <a href={`http://localhost:${location.port || '5173'}/`}>mở Planner bằng localhost</a> sau khi thêm localhost vào Firebase.</small>}
+    {location.hostname === '127.0.0.1' && <small>Bạn có thể <a href={localhostURL.href}>mở Planner bằng localhost</a> sau khi thêm localhost vào Firebase.</small>}
   </div></div>;
 }

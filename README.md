@@ -112,6 +112,29 @@ Khóa publishable chỉ hoạt động trong quyền SELECT/RLS của Supabase; 
 
 Đã kiểm tra đọc thành công nguồn thật, phân trang, bộ lọc nhóm, loại mục, chi tiết/tài liệu và trường hợp lỗi. `npm test` chạy các kiểm thử bộ chuyển đổi/đọc nguồn lớp bằng dữ liệu giả, không ghi vào database thật.
 
+## Chuẩn bị triển khai GitHub Pages
+
+GitHub Pages đang bị chặn vì repo `planner` là private trên gói hiện tại. Để dùng Pages với gói miễn phí, chủ repo cần đồng ý chuyển repository sang public; thao tác này công khai mã nguồn và lịch sử commit. Nếu giữ private thì cần gói GitHub hỗ trợ Pages private hoặc chọn nơi hosting khác.
+
+Bản Pages được build riêng với đường dẫn nền `/planner/`, không dùng trực tiếp mã JSX trên nhánh main:
+
+```bash
+npm run build:pages
+npm run preview:pages
+```
+
+Preview: `http://127.0.0.1:4174/planner/`. File tĩnh nằm trong `dist-pages/` và được bỏ qua trong nhánh mã nguồn. JavaScript, CSS và module lịch lớp đã được kiểm tra ở đúng đường dẫn này.
+
+Sau khi có quyền triển khai:
+
+```bash
+npm run publish:pages
+```
+
+Lệnh này build rồi đẩy các file tĩnh lên nhánh `codex/pages`, thêm `.nojekyll`. GitHub Settings → Pages → Deploy from a branch → chọn `codex/pages` và `/ (root)`. Cách này dùng bản build sẵn, không cần tạo workflow bằng token có scope `workflow`.
+
+Địa chỉ website sau khi Pages được kích hoạt: `https://nguyendangminh278-coder.github.io/planner/`. Thêm `nguyendangminh278-coder.github.io` vào Firebase Authentication → Settings → Authorized domains để Google sign-in hoạt động trên website. Repo còn private hoặc Pages chưa kích hoạt thì địa chỉ này chưa hoạt động.
+
 ## Kiểm thử
 
 ```bash

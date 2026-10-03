@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "test:rules": "firebase emulators:exec --only firestore --project demo-planner \"node --test tests/firestore.test.mjs\"",
     "start": "vite --host localhost --port 5173 --open",
-    "test": "node --test tests/classFeed.test.mjs tests/mood.test.mjs tests/firebaseMessages.test.mjs"
+    "test": "node --test tests/classFeed.test.mjs tests/mood.test.mjs tests/firebaseMessages.test.mjs",
+    "build:pages": "vite build --base=/planner/ --outDir=dist-pages",
+    "publish:pages": "npm run build:pages && gh-pages -b codex/pages -d dist-pages --nojekyll",
+    "preview:pages": "vite preview --outDir dist-pages --base=/planner/ --host 127.0.0.1 --port 4174 --strictPort"
   },
   "dependencies": {
     "firebase": "^12.19.0",
@@ -21,6 +24,7 @@
     "@firebase/rules-unit-testing": "^5.0.2",
     "@vitejs/plugin-react": "^6.1.1",
     "firebase-tools": "^15.32.1",
+    "gh-pages": "^6.3.0",
     "vite": "^8.3.2"
   },
   "overrides": {
