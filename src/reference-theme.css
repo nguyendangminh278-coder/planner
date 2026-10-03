@@ -214,6 +214,12 @@ select { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 12px; co
 .login-points span { color: #64748b; font-size: 13px; font-weight: 700; }
 .login-points svg { color: #0891b2; }
 .google-btn { border: 1px solid #e2e8f0; color: #334155; border-radius: 14px; box-shadow: 0 4px 14px #0f172a06; }
+.login-error { max-width: 620px; margin: 18px auto 0; padding: 13px 16px; border: 1px solid #fecdd3; border-radius: 14px; background: #fff1f2; text-align: left; }
+.login-error .error-message { margin: 0 0 8px !important; line-height: 1.7; }
+.login-error code { display: block; font-size: 11px; color: #9f1239; overflow-wrap: anywhere; margin-bottom: 10px; }
+.login-error a { color: #0e7490; font-size: 13px; font-weight: 800; }
+.login-error p:not(.error-message) { font-size: 12px; line-height: 1.7; color: #64748b; margin-bottom: 0; }
+.login-art small a { color: #0e7490; }
 .blob-a { background: #cffafe; }.blob-b { background: #ffe4e6; }.blob-c { background: #e0e7ff; }
 
 @media (max-width: 1080px) {

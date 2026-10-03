@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test:rules": "firebase emulators:exec --only firestore --project demo-planner \"node --test tests/firestore.test.mjs\"",
     "start": "vite --host localhost --port 5173 --open",
-    "test": "node --test tests/classFeed.test.mjs tests/mood.test.mjs"
+    "test": "node --test tests/classFeed.test.mjs tests/mood.test.mjs tests/firebaseMessages.test.mjs"
   },
   "dependencies": {
     "firebase": "^12.19.0",

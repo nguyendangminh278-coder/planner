@@ -8,7 +8,7 @@ Bấm đúp **start-planner.cmd** trong thư mục dự án. Script khởi độ
 
 Đừng mở trực tiếp `index.html` bằng `file://`: đây là mã nguồn React/JSX, cần máy chủ Vite hoặc bản build được phục vụ qua HTTP. Trang HTML hiện có thông báo hướng dẫn thay cho màn hình trắng nếu mở trực tiếp.
 
-Chọn **Khám phá bản demo** để xem ngay bố cục lịch tuần, timeline công việc và các bước. Đăng nhập Google để sử dụng dữ liệu Firebase riêng của bạn (cần hoàn tất thiết lập Firebase ở phần bên dưới).
+Chọn **Khám phá bản demo** để xem ngay bố cục lịch tuần, timeline công việc và các bước. Đăng nhập Google để sử dụng dữ liệu Firebase riêng của bạn. Google sign-in và database mặc định đã được cấu hình trên project đã cung cấp.
 
 ## Chạy trên máy
 
@@ -49,18 +49,22 @@ Bố cục, font Nunito, nền slate nhạt, điểm nhấn cyan và màu cột 
 - Lịch tháng bắt đầu từ Thứ 2, có dấu ghi chú, thống kê số ngày từng cảm xúc và cảm xúc ghi nhận nhiều nhất. Ngày chưa lưu không được tính vào thống kê.
 - Với tài khoản Google, nhật ký đồng bộ Firestore qua `moodEntries/{uid}_{YYYY-MM-DD}` với ownerId, date, moodId, note, updatedAt. Mood/ghi chú riêng tư, không được chia sẻ khi chia sẻ lịch. Chế độ demo chỉ lưu trong phiên.
 
-**Cần triển khai bản `firestore.rules` mới để tài khoản thật lưu được nhật ký cảm xúc:**
+Rules cho nhật ký cảm xúc đã được áp dụng trên project thật. Khi thay đổi rules hoặc dùng project khác, triển khai lại bằng:
 
 ```bash
 npx firebase login
 npx firebase deploy --only firestore --project calendar-f3d1b
 ```
 
-Đã kiểm thử bộ lịch tháng/thống kê và rules riêng tư bằng emulator. Cấu hình backend thật vẫn cần hoàn tất như mục Firebase Console bên dưới; không tự nhập dữ liệu hoặc tài khoản từ dự án mẫu.
+Đã kiểm thử bộ lịch tháng/thống kê và rules riêng tư bằng emulator. Backend thật đã được cấu hình trong Firebase Console; không tự nhập dữ liệu hoặc tài khoản từ dự án mẫu.
 
-## Thiết lập cần hoàn tất trong Firebase Console
+## Cấu hình Firebase hiện tại và hướng dẫn thiết lập lại
 
-Mã frontend và rules đã hoàn thiện, nhưng Firebase CLI trên máy chưa xác thực được nên chưa triển khai rules/indexes lên project thật và chưa xác minh cấu hình Google/Firestore của project.
+Đã khởi tạo Firebase Authentication, bật Google với tên public-facing Planner và cho phép `localhost`, `127.0.0.1`, `calendar-f3d1b.firebaseapp.com`, `calendar-f3d1b.web.app`. Đã tạo Firestore `(default)` Standard ở `asia-southeast1` (Singapore), production mode; áp dụng `firestore.rules` và cấu hình chỉ mục `viewers.viewerEmail` cho collection group.
+
+Lỗi đăng nhập trước đó đã được xác định bằng API là `CONFIGURATION_NOT_FOUND`: project chưa có cấu hình Authentication/Google. Sau khi cấu hình, API đã tạo được URL Google và tài khoản người dùng đã đăng nhập Planner thành công. Firebase CLI vẫn chưa có phiên đăng nhập; cấu hình được thực hiện qua Firebase Console bằng tài khoản chủ dự án.
+
+Các bước dưới đây dành cho việc thiết lập lại hoặc chuyển project:
 
 1. Mở https://console.firebase.google.com/project/calendar-f3d1b/overview.
 2. Authentication → Sign-in method → bật **Google**, chọn email hỗ trợ và lưu.
@@ -120,4 +124,4 @@ npm audit --omit=dev
 
 Các phụ thuộc frontend có kết quả audit không phát hiện lỗ hổng ở lần kiểm tra hiện tại. Firebase CLI là công cụ dev và vẫn có cảnh báo từ một số phụ thuộc bắc cầu; không dùng `npm audit fix --force` để hạ SDK/công cụ mà chưa kiểm tra tương thích.
 
-Dự án chỉ được đẩy lên GitHub theo yêu cầu; chưa triển khai website lên Vercel hay GitHub Pages.
+Mã nguồn: https://github.com/nguyendangminh278-coder/planner (repo private). Link GitHub là kho mã nguồn; ứng dụng hiện chạy bằng `start-planner.cmd`/`npm run start`, chưa triển khai website lên Vercel hay GitHub Pages.
