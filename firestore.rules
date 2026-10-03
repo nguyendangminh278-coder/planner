@@ -34,6 +34,20 @@ service cloud.firestore {
       allow create: if owns(request.resource.data) && validTask(request.resource.data);
       allow update: if owns(resource.data) && owns(request.resource.data) && validTask(request.resource.data);
     }
+    match /moodEntries/{entryId} {
+      function validMood(data) {
+        return data.keys().hasAll(['ownerId', 'date', 'moodId', 'note', 'updatedAt'])
+          && data.keys().hasOnly(['ownerId', 'date', 'moodId', 'note', 'updatedAt'])
+          && data.date is string && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && data.moodId in ['sunny', 'cloudy', 'rainy', 'storm', 'rainbow', 'fog']
+          && data.note is string && data.note.size() <= 4000
+          && data.updatedAt == request.time
+          && entryId == request.auth.uid + '_' + data.date;
+      }
+      allow read, delete: if owns(resource.data);
+      allow create: if owns(request.resource.data) && validMood(request.resource.data);
+      allow update: if owns(resource.data) && owns(request.resource.data) && validMood(request.resource.data);
+    }
     match /calendarShares/{ownerId}/viewers/{email} {
       allow read: if signedIn() && request.auth.uid == ownerId;
       allow create, update: if signedIn() && request.auth.uid == ownerId

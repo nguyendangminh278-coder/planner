@@ -38,6 +38,26 @@ npm run preview
 - Lịch tuần Thứ 2–Thứ 7, hiển thị 24 giờ; cuộn mặc định đến 08:00.
 - Lịch nhóm từ API tùy chọn, có kiểm tra phản hồi và thông báo lỗi.
 
+## Giao diện và thời tiết cảm xúc từ todolist-main
+
+Bố cục, font Nunito, nền slate nhạt, điểm nhấn cyan và màu cột ngày được chuyển từ dự án `C:\Users\Admin\OneDrive\Pictures\todolist-main\todolist-main`. Thứ 2–Thứ 7 lần lượt dùng rose, orange, amber, emerald, cyan, indigo. Chọn màu cho lịch, công việc và từng bước trong biểu mẫu chỉnh sửa.
+
+- Mặc định xem lịch theo cột ngày, mở rộng cột bằng nút tiêu đề/hover. Có thể chuyển về **Lưới giờ** để xem lịch theo thời gian.
+- Todo ba cấp vẫn có timeline nối các bước; thêm danh sách **Hôm nay / Sắp tới / Đã hoàn thành** và cột tổng quan/mốc cần chú ý theo format dự án mẫu.
+- **Thời tiết cảm xúc** là nhật ký tâm trạng giống dự án mẫu, không phải dự báo khí tượng và không cần vị trí hay API thời tiết.
+- Sáu trạng thái: Trời nắng, Có mây, Mưa nhẹ, Giông bão, Cầu vồng, Sương mù. Chọn nhanh hôm nay hoặc mở lịch tháng để chọn một ngày và thêm ghi chú (tối đa 4.000 ký tự).
+- Lịch tháng bắt đầu từ Thứ 2, có dấu ghi chú, thống kê số ngày từng cảm xúc và cảm xúc ghi nhận nhiều nhất. Ngày chưa lưu không được tính vào thống kê.
+- Với tài khoản Google, nhật ký đồng bộ Firestore qua `moodEntries/{uid}_{YYYY-MM-DD}` với ownerId, date, moodId, note, updatedAt. Mood/ghi chú riêng tư, không được chia sẻ khi chia sẻ lịch. Chế độ demo chỉ lưu trong phiên.
+
+**Cần triển khai bản `firestore.rules` mới để tài khoản thật lưu được nhật ký cảm xúc:**
+
+```bash
+npx firebase login
+npx firebase deploy --only firestore --project calendar-f3d1b
+```
+
+Đã kiểm thử bộ lịch tháng/thống kê và rules riêng tư bằng emulator. Cấu hình backend thật vẫn cần hoàn tất như mục Firebase Console bên dưới; không tự nhập dữ liệu hoặc tài khoản từ dự án mẫu.
+
 ## Thiết lập cần hoàn tất trong Firebase Console
 
 Mã frontend và rules đã hoàn thiện, nhưng Firebase CLI trên máy chưa xác thực được nên chưa triển khai rules/indexes lên project thật và chưa xác minh cấu hình Google/Firestore của project.

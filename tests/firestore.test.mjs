@@ -2,7 +2,7 @@ import { before, after, beforeEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { setDoc, getDoc, getDocs, updateDoc, deleteDoc, doc, collection, collectionGroup, query, where } from 'firebase/firestore';
+import { setDoc, getDoc, getDocs, updateDoc, deleteDoc, doc, collection, collectionGroup, query, where, serverTimestamp } from 'firebase/firestore';
 
 let env;
 before(async () => {
@@ -81,4 +81,28 @@ test('profiles stay private and only their owner can write', async () => {
   await assertSucceeds(setDoc(doc(dbFor('alice'), 'profiles', 'alice'), { displayName: 'Alice', email: 'alice@example.com', photoURL: '' }));
   await assertFails(getDoc(doc(dbFor('bob'), 'profiles', 'alice')));
   await assertFails(setDoc(doc(dbFor('bob'), 'profiles', 'alice'), { displayName: 'Bob' }));
+});
+
+test('mood entries can be saved and queried by their owner, including notes', async () => {
+  const db = dbFor('alice'), ref = doc(db, 'moodEntries', 'alice_2026-10-03');
+  await assertSucceeds(setDoc(ref, { ownerId: 'alice', date: '2026-10-03', moodId: 'sunny', note: 'A good day', updatedAt: serverTimestamp() }));
+  await assertSucceeds(updateDoc(ref, { moodId: 'rainbow', note: 'Feeling creative', updatedAt: serverTimestamp() }));
+  const saved = await assertSucceeds(getDoc(ref)); assert.equal(saved.data().note, 'Feeling creative');
+  const result = await assertSucceeds(getDocs(query(collection(db, 'moodEntries'), where('ownerId', '==', 'alice'))));
+  assert.equal(result.size, 1);
+});
+test('moods remain private even when a calendar is shared; spoofing and malformed entries are denied', async () => {
+  const db = dbFor('alice'), path = ['moodEntries', 'alice_2026-10-03'];
+  const entry = { ownerId: 'alice', date: '2026-10-03', moodId: 'cloudy', note: 'Private note', updatedAt: serverTimestamp() };
+  await setDoc(doc(db, ...path), entry);
+  await setDoc(shareRef(db), share);
+  for (const other of [dbFor('bob'), env.unauthenticatedContext().firestore()]) {
+    await assertFails(getDoc(doc(other, ...path)));
+    await assertFails(setDoc(doc(other, ...path), entry));
+    await assertFails(getDocs(query(collection(other, 'moodEntries'), where('ownerId', '==', 'alice'))));
+  }
+  await assertFails(updateDoc(doc(db, ...path), { ownerId: 'bob', updatedAt: serverTimestamp() }));
+  await assertFails(setDoc(doc(db, 'moodEntries', 'wrong-id'), entry));
+  await assertFails(setDoc(doc(db, ...path), { ...entry, moodId: 'invalid' }));
+  await assertFails(setDoc(doc(db, ...path), { ...entry, note: 'x'.repeat(4001) }));
 });

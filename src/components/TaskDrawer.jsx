@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { dateKey } from '../lib/date';
 import { firebaseError } from '../lib/firebase';
+import ColorPicker from './ColorPicker';
+import { plannerColors } from '../lib/theme';
 
 export default function TaskDrawer({ item, onClose, onSave, onDelete }) {
   const today = dateKey(new Date());
-  const [form, setForm] = useState({ title: '', start: today, end: today, progress: 0, details: '', color: '#e8d8f4', steps: [], ...item });
+  const [form, setForm] = useState({ title: '', start: today, end: today, progress: 0, details: '', color: '#ffe4e6', steps: [], ...item });
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
   const change = (key, value) => setForm(f => ({ ...f, [key]: value }));
   const changeStep = (id, key, value) => change('steps', form.steps.map(s => s.id === id ? { ...s, [key]: value } : s));
@@ -29,15 +31,17 @@ export default function TaskDrawer({ item, onClose, onSave, onDelete }) {
       <div className="two"><label>Bắt đầu<input required type="date" value={form.start} onInput={e => change('start', e.target.value)}/></label><label>Kết thúc<input required type="date" value={form.end} onInput={e => change('end', e.target.value)}/></label></div>
       <label>Tiến độ (%)<input required type="number" min="0" max="100" value={form.progress} onInput={e => change('progress', e.target.value)}/></label>
       <label>Ghi chú / checklist<textarea maxLength={20000} value={form.details} onInput={e => change('details', e.target.value)}/></label>
+      <ColorPicker value={form.color} onChange={color => change('color', color)}/>
       <h3>Các bước thực hiện</h3>
       {form.steps.map((step, index) => <fieldset className="step-editor" key={step.id}><legend>Bước {index + 1}</legend>
         <label>Tên bước<input required maxLength={200} value={step.title} onInput={e => changeStep(step.id, 'title', e.target.value)}/></label>
         <div className="two"><label>Bắt đầu<input required type="date" value={step.start} onInput={e => changeStep(step.id, 'start', e.target.value)}/></label><label>Kết thúc<input required type="date" value={step.end} onInput={e => changeStep(step.id, 'end', e.target.value)}/></label></div>
         <label>Tiến độ bước (%)<input required type="number" min="0" max="100" value={step.progress} onInput={e => changeStep(step.id, 'progress', e.target.value)}/></label>
         <label>Nội dung bậc 3<textarea maxLength={20000} value={step.details || ''} onInput={e => changeStep(step.id, 'details', e.target.value)}/></label>
+        <ColorPicker value={step.color} onChange={color => changeStep(step.id, 'color', color)}/>
         <button type="button" className="text-btn danger" onClick={() => change('steps', form.steps.filter(s => s.id !== step.id))}><Trash2 size={14}/>Bỏ bước</button>
       </fieldset>)}
-      <button type="button" className="soft-btn" disabled={form.steps.length >= 30} onClick={() => change('steps', [...form.steps, { id: crypto.randomUUID(), title: '', start: form.start, end: form.end, progress: 0, details: '', color: '#cfe9de' }])}><Plus size={16}/>Thêm bước</button>
+      <button type="button" className="soft-btn" disabled={form.steps.length >= 30} onClick={() => change('steps', [...form.steps, { id: crypto.randomUUID(), title: '', start: form.start, end: form.end, progress: 0, details: '', color: plannerColors[(form.steps.length+1)%plannerColors.length].value }])}><Plus size={16}/>Thêm bước</button>
       {error && <p className="error-message" role="alert">{error}</p>}
       <button className="primary-btn" disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu cập nhật'}</button>
       {item?.id && <button type="button" className="text-btn danger" onClick={remove} disabled={busy}>Xóa công việc</button>}
