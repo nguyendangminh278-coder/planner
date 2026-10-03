@@ -11,6 +11,21 @@ function SpanBar({item, days, parent=false, onSelect}) {
   </button>
 }
 
+function TaskLinks({task, days}) {
+  const parent = clipToWeek(task.start, task.end, days);
+  if (!parent) return null;
+  const steps = task.steps || [], height = 48 * (steps.length + 1);
+  const stem = parent.startIndex * 100 + 12;
+  const visible = steps.map((step, index) => ({ span: clipToWeek(step.start, step.end, days), index })).filter(step => step.span);
+  return <svg className="task-links" viewBox={`0 0 600 ${height}`} preserveAspectRatio="none" style={{height}} aria-hidden="true">
+    {visible.map(({span,index}) => <path key={`parent-${index}`} d={`M ${stem} 24 V ${72 + index*48} H ${span.startIndex*100+12}`} className="parent-connector"/>)}
+    {steps.slice(1).map((step,index) => {
+      const previous = clipToWeek(steps[index].start, steps[index].end, days), next = clipToWeek(step.start, step.end, days);
+      return previous && next ? <path key={`next-${index}`} d={`M ${previous.endIndex*100+88} ${72+index*48} V ${96+index*48} H ${next.startIndex*100+12} V ${120+index*48}`} className="step-connector"/> : null;
+    })}
+  </svg>;
+}
+
 export default function TaskTimeline({days, tasks, onSelect}) {
   const [open,setOpen]=useState({});
   return <section className="timeline-section">
@@ -18,6 +33,7 @@ export default function TaskTimeline({days, tasks, onSelect}) {
     <div className="timeline-head"><span>Công việc</span>{days.map(d=><span key={dateKey(d)}>{d.toLocaleDateString('vi-VN',{weekday:'short'})}<b>{d.getDate()}</b></span>)}</div>
     <div className="timeline-body">
       {tasks.map(task => <div className="task-group" key={task.id}>
+        {(open[task.id] ?? true) && <TaskLinks task={task} days={days}/>}
         <div className="timeline-row parent-row">
           <div className="task-label"><button className="icon-btn" aria-label={`Ẩn/hiện bước: ${task.title}`} onClick={()=>setOpen(o=>({...o,[task.id]:!(o[task.id] ?? true)}))}>{(open[task.id] ?? true)?<ChevronDown size={16}/>:<ChevronRight size={16}/>}</button><button className="text-btn" onClick={()=>onSelect(task)}>{task.title}</button><span>{task.progress}%</span></div>
           <SpanBar item={task} days={days} parent onSelect={onSelect}/>

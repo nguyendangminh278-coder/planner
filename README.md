@@ -2,6 +2,14 @@
 
 Ứng dụng React + Vite với giao diện pastel, dùng Firebase project `calendar-f3d1b`.
 
+## Mở ứng dụng bằng một lần bấm
+
+Bấm đúp **start-planner.cmd** trong thư mục dự án. Script khởi động máy chủ Vite và tự mở đúng địa chỉ trong trình duyệt; giữ cửa sổ đó đang chạy khi sử dụng Planner. Có thể chạy `npm run start` với kết quả tương tự. Nếu cổng 5173 đang bận, Vite chọn cổng tiếp theo và mở đúng URL đó.
+
+Đừng mở trực tiếp `index.html` bằng `file://`: đây là mã nguồn React/JSX, cần máy chủ Vite hoặc bản build được phục vụ qua HTTP. Trang HTML hiện có thông báo hướng dẫn thay cho màn hình trắng nếu mở trực tiếp.
+
+Chọn **Khám phá bản demo** để xem ngay bố cục lịch tuần, timeline công việc và các bước. Đăng nhập Google để sử dụng dữ liệu Firebase riêng của bạn (cần hoàn tất thiết lập Firebase ở phần bên dưới).
+
 ## Chạy trên máy
 
 Yêu cầu Node.js 24 (hoặc phiên bản được Vite hỗ trợ).
@@ -63,6 +71,22 @@ Indexes cho truy vấn collection group `viewers` được định nghĩa trong 
 Tạo `.env` rồi đặt `VITE_GROUP_CALENDAR_API_URL` thành URL API hỗ trợ CORS. API trả về mảng hoặc `{ "events": [...] }`, mỗi event có id, title, start, end và tùy chọn owner/color. start/end là ISO date-time có timezone. Không đặt secret/API token trong biến `VITE_*`. Nếu API cần secret, dùng backend proxy riêng.
 
 Nếu chưa cấu hình API, tài khoản thật hiển thị thông báo; chỉ bản demo dùng lịch nhóm mẫu.
+
+## Xem lịch và task của lớp từ Supabase
+
+Chọn **Xem lịch & task lớp** trên thanh công cụ để mở bảng riêng bên dưới timeline. Chỉ khi mở mục này, ứng dụng mới đọc nguồn Supabase; có nút làm mới, chọn nhóm, loại mục và khoảng ngày. Nguồn đọc là `https://dafylvuvlknoebamxxvr.supabase.co`, dùng khóa publishable đã cung cấp. Có thể ghi đè bằng `VITE_CLASS_SUPABASE_URL` và `VITE_CLASS_SUPABASE_PUBLISHABLE_KEY` trong `.env`.
+
+- `deadlines`: đọc id, title, due_date, link, type, group_id, assignee, color, item_kind.
+- `item_kind=event`: lịch theo ngày; `item_kind=task`: công việc có ngày đến hạn.
+- `groups`: chỉ đọc id/name để hiển thị bộ lọc và nhãn nhóm.
+- Chỉ đọc các mục `type=general`; bỏ các mục nội bộ có tên bắt đầu `__`. Mặc định hiển thị mục chung không thuộc nhóm. Người dùng có thể chọn nhóm công khai khác.
+- Không gửi dữ liệu/tokens Firebase sang Supabase, không ghi/sửa/xóa trên database lớp và không chuyển các mục lớp vào Firestore.
+- Các mục từ nguồn này chưa có giờ bắt đầu/kết thúc, tiến độ hoặc bước con. Giao diện hiển thị ngày đúng dữ liệu và chi tiết/tài liệu gốc, không tạo giờ hoặc tiến độ giả.
+- Lịch lớp dùng cùng tuần Thứ 2–Thứ 7 đang xem. Deadline ngoài tuần này (bao gồm Chủ nhật) có thể xem qua bộ lọc Từ hôm nay hoặc Tất cả ngày.
+
+Khóa publishable chỉ hoạt động trong quyền SELECT/RLS của Supabase; nếu quyền đọc thay đổi, bảng lớp hiển thị lỗi riêng, còn planner cá nhân tiếp tục hoạt động. Không cần cài SDK Supabase để đọc REST API này.
+
+Đã kiểm tra đọc thành công nguồn thật, phân trang, bộ lọc nhóm, loại mục, chi tiết/tài liệu và trường hợp lỗi. `npm test` chạy các kiểm thử bộ chuyển đổi/đọc nguồn lớp bằng dữ liệu giả, không ghi vào database thật.
 
 ## Kiểm thử
 

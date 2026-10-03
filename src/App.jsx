@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { CalendarPlus, ChevronLeft, ChevronRight, LogOut, Users, RefreshCw, Share2, Plus } from 'lucide-react';
 import Login from './components/Login';
 import CalendarWeek from './components/CalendarWeek';
@@ -12,18 +12,20 @@ import { auth, db, onAuthStateChanged, signOut, collection, collectionGroup, que
 
 function Avatar({ user }) { return user.photoURL ? <img className="avatar" src={user.photoURL} alt="Ảnh tài khoản" referrerPolicy="no-referrer"/> : <div className="avatar fallback">{(user.displayName || 'U').slice(0, 1)}</div>; }
 const unpack = snapshot => snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
+const ClassBoard = lazy(() => import('./components/ClassBoard'));
 
 export default function App() {
   const [user, setUser] = useState(null), [authLoading, setAuthLoading] = useState(true), [demo, setDemo] = useState(false);
   const [week, setWeek] = useState(new Date());
   const [events, setEvents] = useState([]), [shared, setShared] = useState([]), [tasks, setTasks] = useState([]);
   const [external, setExternal] = useState([]), [showExternal, setShowExternal] = useState(true);
+  const [classOpen, setClassOpen] = useState(false);
   const [selected, setSelected] = useState(null), [eventEditor, setEventEditor] = useState(null), [shareOpen, setShareOpen] = useState(false);
   const [apiLoading, setApiLoading] = useState(false), [dataLoading, setDataLoading] = useState(false), [error, setError] = useState('');
   const days = useMemo(() => weekDays(week), [week]);
 
   useEffect(() => onAuthStateChanged(auth, next => {
-    setUser(next); setDemo(false); setEvents([]); setTasks([]); setShared([]); setExternal([]); setError(''); setSelected(null); setEventEditor(null); setShareOpen(false); setAuthLoading(false);
+    setUser(next); setDemo(false); setEvents([]); setTasks([]); setShared([]); setExternal([]); setClassOpen(false); setError(''); setSelected(null); setEventEditor(null); setShareOpen(false); setAuthLoading(false);
   }, err => { setError(firebaseError(err)); setAuthLoading(false); }), []);
 
   useEffect(() => {
@@ -74,7 +76,7 @@ export default function App() {
     await deleteDoc(doc(db, kind, id));
   }
   async function logout() {
-    try { if (demo) { setDemo(false); setEvents([]); setTasks([]); setShared([]); setExternal([]); setError(''); } else await signOut(auth); }
+    try { if (demo) { setDemo(false); setEvents([]); setTasks([]); setShared([]); setExternal([]); setClassOpen(false); setError(''); } else await signOut(auth); }
     catch (err) { setError(firebaseError(err)); }
   }
   async function loadExternal() {
@@ -108,14 +110,15 @@ export default function App() {
     <main>
       {demo && <div className="notice" role="status">Bản demo — thay đổi chỉ lưu trong phiên này. Đăng nhập Google để lưu dữ liệu thật.</div>}
       {error && <div className="error-banner" role="alert">{error}<button className="text-btn" onClick={() => setError('')}>Đóng</button></div>}
-      <section className="hero-strip"><div><span className="eyebrow">PLANNING BOARD</span><h1>Một tuần rõ việc, một quy trình rõ bước.</h1><p>Xem lịch cá nhân, lịch chia sẻ, lịch nhóm từ API và todo phân cấp trên cùng một trục thời gian.</p></div>
+      <section className="hero-strip"><div><span className="eyebrow">PLANNING BOARD</span><h1>Lịch & công việc</h1><p>Lịch tuần ở trên, công việc và các bước thực hiện nối tiếp bên dưới.</p></div>
         <div className="week-switch"><button className="icon-btn" aria-label="Tuần trước" onClick={() => setWeek(d => { const x = new Date(d); x.setDate(x.getDate() - 7); return x; })}><ChevronLeft/></button><div><b>{fmtShort(days[0])} — {fmtShort(days[5])}</b><small>Thứ 2 → Thứ 7 · {days[0].getFullYear()}</small></div><button className="icon-btn" aria-label="Tuần sau" onClick={() => setWeek(d => { const x = new Date(d); x.setDate(x.getDate() + 7); return x; })}><ChevronRight/></button></div>
       </section>
-      <div className="board-actions"><button className="soft-btn" onClick={() => setWeek(new Date())}>Tuần này</button><button className="soft-btn" onClick={() => setEventEditor({})}><CalendarPlus size={16}/>Thêm lịch</button><button className="soft-btn" onClick={() => setSelected({ start: dateKey(days[0]), end: dateKey(days[5]) })}><Plus size={16}/>Thêm công việc</button><button className="soft-btn" onClick={() => setShareOpen(true)}><Share2 size={16}/>Chia sẻ lịch</button></div>
+      <div className="board-actions"><button className="soft-btn" onClick={() => setWeek(new Date())}>Tuần này</button><button className="soft-btn" onClick={() => setEventEditor({})}><CalendarPlus size={16}/>Thêm lịch</button><button className="soft-btn" onClick={() => setSelected({ start: dateKey(days[0]), end: dateKey(days[5]) })}><Plus size={16}/>Thêm công việc</button><button className="soft-btn" onClick={() => setShareOpen(true)}><Share2 size={16}/>Chia sẻ lịch</button><button className={`soft-btn ${classOpen ? 'active' : ''}`} aria-expanded={classOpen} onClick={() => setClassOpen(open => !open)}><Users size={16}/>{classOpen ? 'Ẩn lịch & task lớp' : 'Xem lịch & task lớp'}</button></div>
       <div className="api-ribbon"><div><Users size={18}/><b>Lịch chung nhóm</b><span>Xem cùng lịch cá nhân và lịch được chia sẻ.</span></div><div><label className="switch"><input aria-label="Hiện lịch nhóm" type="checkbox" checked={showExternal} onChange={e => setShowExternal(e.target.checked)}/><i/></label><button className="text-btn" disabled={apiLoading} onClick={loadExternal}><RefreshCw size={15} className={apiLoading ? 'spin' : ''}/>{apiLoading ? 'Đang tải…' : external.length ? 'Làm mới' : 'Tải lịch nhóm'}</button></div></div>
       {dataLoading && <p role="status">Đang tải dữ liệu của bạn…</p>}
       <CalendarWeek days={days} events={[...events, ...shared]} externalEvents={external} showExternal={showExternal} onSelect={setEventEditor}/>
       <TaskTimeline days={days} tasks={tasks} onSelect={setSelected}/>
+      {classOpen && <Suspense fallback={<p role="status">Đang mở lịch lớp…</p>}><ClassBoard days={days} onClose={() => setClassOpen(false)}/></Suspense>}
     </main>
     {selected && <TaskDrawer key={selected.id || 'new'} item={selected} onClose={() => setSelected(null)} onSave={(data, id) => saveRecord('tasks', data, id)} onDelete={id => removeRecord('tasks', id)}/>}
     {eventEditor && <AddEventModal key={eventEditor.id || 'new'} item={eventEditor.id ? eventEditor : null} initialDate={dateKey(days[0])} onClose={() => setEventEditor(null)} onAdd={(data, id) => saveRecord('events', data, id)} onDelete={id => removeRecord('events', id)}/>}
