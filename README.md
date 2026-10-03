@@ -1,5 +1,8 @@
 # Planner
 
+Website: **https://nguyendangminh278-coder.github.io/planner/**
+Mã nguồn: https://github.com/nguyendangminh278-coder/planner (public).
+
 Ứng dụng React + Vite với giao diện pastel, dùng Firebase project `calendar-f3d1b`.
 
 ## Mở ứng dụng bằng một lần bấm
@@ -60,7 +63,7 @@ npx firebase deploy --only firestore --project calendar-f3d1b
 
 ## Cấu hình Firebase hiện tại và hướng dẫn thiết lập lại
 
-Đã khởi tạo Firebase Authentication, bật Google với tên public-facing Planner và cho phép `localhost`, `127.0.0.1`, `calendar-f3d1b.firebaseapp.com`, `calendar-f3d1b.web.app`. Đã tạo Firestore `(default)` Standard ở `asia-southeast1` (Singapore), production mode; áp dụng `firestore.rules` và cấu hình chỉ mục `viewers.viewerEmail` cho collection group.
+Đã khởi tạo Firebase Authentication, bật Google với tên public-facing Planner và cho phép `localhost`, `127.0.0.1`, `calendar-f3d1b.firebaseapp.com`, `calendar-f3d1b.web.app`, `nguyendangminh278-coder.github.io`. Đã tạo Firestore `(default)` Standard ở `asia-southeast1` (Singapore), production mode; áp dụng `firestore.rules` và cấu hình chỉ mục `viewers.viewerEmail` cho collection group.
 
 Lỗi đăng nhập trước đó đã được xác định bằng API là `CONFIGURATION_NOT_FOUND`: project chưa có cấu hình Authentication/Google. Sau khi cấu hình, API đã tạo được URL Google và tài khoản người dùng đã đăng nhập Planner thành công. Firebase CLI vẫn chưa có phiên đăng nhập; cấu hình được thực hiện qua Firebase Console bằng tài khoản chủ dự án.
 
@@ -112,9 +115,9 @@ Khóa publishable chỉ hoạt động trong quyền SELECT/RLS của Supabase; 
 
 Đã kiểm tra đọc thành công nguồn thật, phân trang, bộ lọc nhóm, loại mục, chi tiết/tài liệu và trường hợp lỗi. `npm test` chạy các kiểm thử bộ chuyển đổi/đọc nguồn lớp bằng dữ liệu giả, không ghi vào database thật.
 
-## Chuẩn bị triển khai GitHub Pages
+## Triển khai GitHub Pages
 
-GitHub Pages đang bị chặn vì repo `planner` là private trên gói hiện tại. Để dùng Pages với gói miễn phí, chủ repo cần đồng ý chuyển repository sang public; thao tác này công khai mã nguồn và lịch sử commit. Nếu giữ private thì cần gói GitHub hỗ trợ Pages private hoặc chọn nơi hosting khác.
+Repo đã được chuyển sang public theo xác nhận của chủ repo. GitHub Pages đã bật, dùng nhánh `codex/pages` và thư mục `/ (root)`, HTTPS được bật. Đã xác minh website trả HTTP 200, tải được giao diện và dữ liệu lớp từ Supabase.
 
 Bản Pages được build riêng với đường dẫn nền `/planner/`, không dùng trực tiếp mã JSX trên nhánh main:
 
@@ -125,7 +128,7 @@ npm run preview:pages
 
 Preview: `http://127.0.0.1:4174/planner/`. File tĩnh nằm trong `dist-pages/` và được bỏ qua trong nhánh mã nguồn. JavaScript, CSS và module lịch lớp đã được kiểm tra ở đúng đường dẫn này.
 
-Sau khi có quyền triển khai:
+Cập nhật website sau khi sửa mã nguồn:
 
 ```bash
 npm run publish:pages
@@ -133,7 +136,7 @@ npm run publish:pages
 
 Lệnh này build rồi đẩy các file tĩnh lên nhánh `codex/pages`, thêm `.nojekyll`. GitHub Settings → Pages → Deploy from a branch → chọn `codex/pages` và `/ (root)`. Cách này dùng bản build sẵn, không cần tạo workflow bằng token có scope `workflow`.
 
-Địa chỉ website sau khi Pages được kích hoạt: `https://nguyendangminh278-coder.github.io/planner/`. Thêm `nguyendangminh278-coder.github.io` vào Firebase Authentication → Settings → Authorized domains để Google sign-in hoạt động trên website. Repo còn private hoặc Pages chưa kích hoạt thì địa chỉ này chưa hoạt động.
+Website: `https://nguyendangminh278-coder.github.io/planner/`. Miền `nguyendangminh278-coder.github.io` đã được thêm vào Firebase Authentication → Authorized domains; API đã tạo được URL Google sign-in cho địa chỉ website này.
 
 ## Kiểm thử
 
@@ -147,4 +150,4 @@ npm audit --omit=dev
 
 Các phụ thuộc frontend có kết quả audit không phát hiện lỗ hổng ở lần kiểm tra hiện tại. Firebase CLI là công cụ dev và vẫn có cảnh báo từ một số phụ thuộc bắc cầu; không dùng `npm audit fix --force` để hạ SDK/công cụ mà chưa kiểm tra tương thích.
 
-Mã nguồn: https://github.com/nguyendangminh278-coder/planner (repo private). Link GitHub là kho mã nguồn; ứng dụng hiện chạy bằng `start-planner.cmd`/`npm run start`, chưa triển khai website lên Vercel hay GitHub Pages.
+Website đang chạy trên GitHub Pages: https://nguyendangminh278-coder.github.io/planner/. Repo mã nguồn public: https://github.com/nguyendangminh278-coder/planner. Có thể tiếp tục chạy local bằng `start-planner.cmd` hoặc `npm run start`.
