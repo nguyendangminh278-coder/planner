@@ -57,22 +57,24 @@ function prepare(event) {
 }
 
 export function buildEventData(form, recurrence) {
+  const notes = form.notes ?? '';
+  if (typeof notes !== 'string' || notes.length > 20000) throw new Error('Ghi chú lịch tối đa 20.000 ký tự.');
   if (!form.title.trim() || !IANAZone.isValidZone(form.timeZone)) throw new Error('Điền tên lịch và chọn múi giờ hợp lệ.');
   const start = DateTime.fromISO(`${form.date}T${form.allDay ? '00:00' : form.start}`, { zone: form.timeZone });
   let end = DateTime.fromISO(`${form.endDate}T${form.allDay ? '00:00' : form.end}`, { zone: form.timeZone });
   if (form.allDay) end = end.plus({ days: 1 });
   if (!start.isValid || !end.isValid || end <= start) throw new Error('Chọn ngày, giờ kết thúc sau thời gian bắt đầu.');
   if (!validRecurrence(recurrence, form.date)) throw new Error('Quy tắc lặp chưa hợp lệ. Chọn thứ, khoảng lặp và thời điểm kết thúc.');
-  const data = { title: form.title.trim(), start: start.toUTC().toISO(), end: end.toUTC().toISO(), color: form.color, allDay: form.allDay, timeZone: form.timeZone, recurrence };
+  const data = { title: form.title.trim(), notes, start: start.toUTC().toISO(), end: end.toUTC().toISO(), color: form.color, allDay: form.allDay, timeZone: form.timeZone, recurrence };
   if (recurrence) prepare(data);
   return data;
 }
 
 export function eventForm(event, initialDate) {
   const zone = event?.timeZone || eventTimeZone();
-  if (!event) return { title: '', date: initialDate, endDate: initialDate, start: '09:00', end: '10:00', color: '#cffafe', allDay: false, timeZone: zone };
+  if (!event) return { title: '', notes:'', date: initialDate, endDate: initialDate, start: '09:00', end: '10:00', color: '#cffafe', allDay: false, timeZone: zone };
   const start = DateTime.fromISO(event.start, { zone }), end = DateTime.fromISO(event.end, { zone });
-  return { title: event.title, date: start.toISODate(), endDate: (event.allDay ? end.minus({ days: 1 }) : end).toISODate(), start: start.toFormat('HH:mm'), end: end.toFormat('HH:mm'), color: event.color || '#cffafe', allDay: !!event.allDay, timeZone: zone };
+  return { title: event.title, notes:typeof event.notes === 'string' ? event.notes : '', date: start.toISODate(), endDate: (event.allDay ? end.minus({ days: 1 }) : end).toISODate(), start: start.toFormat('HH:mm'), end: end.toFormat('HH:mm'), color: event.color || '#cffafe', allDay: !!event.allDay, timeZone: zone };
 }
 
 export function recurrenceSummary(rule, date) {

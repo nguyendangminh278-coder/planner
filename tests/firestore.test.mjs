@@ -23,6 +23,19 @@ async function seed() {
 const shareRef = db => doc(db, 'calendarShares', 'alice', 'viewers', 'bob@example.com');
 const share = { ownerId: 'alice', ownerName: 'Alice', viewerEmail: 'bob@example.com', permission: 'read' };
 
+test('owners save event notes, granted viewers read them but cannot edit; malformed notes are rejected', async () => {
+  const db=dbFor('alice'), ref=doc(db,'events','with-notes');
+  await assertSucceeds(setDoc(ref,{...event,notes:'Chuẩn bị báo cáo.\nMang checklist.'}));
+  await assertFails(getDoc(doc(dbFor('bob'),'events','with-notes')));
+  await setDoc(shareRef(db),share);
+  const shared=await assertSucceeds(getDoc(doc(dbFor('bob'),'events','with-notes')));
+  assert.ok(shared.data().notes.includes('\n'));
+  await assertFails(updateDoc(doc(dbFor('bob'),'events','with-notes'),{notes:'Changed'}));
+  await assertFails(updateDoc(ref,{notes:123}));
+  await assertFails(updateDoc(ref,{notes:'x'.repeat(20001)}));
+  await assertSucceeds(updateDoc(ref,{notes:''}));
+});
+
 test('owners can create/read/update/delete their events and tasks', async () => {
   const db = dbFor('alice');
   for (const [kind, value] of [['events', event], ['tasks', task]]) {

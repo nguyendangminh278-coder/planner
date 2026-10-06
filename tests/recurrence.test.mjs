@@ -11,6 +11,17 @@ const master = (date,rule,options={}) => ({...buildEventData({...form(date),...o
 const range = (from,to,timeZone=zone) => [DateTime.fromISO(from,{zone:timeZone}).toJSDate(),DateTime.fromISO(to,{zone:timeZone}).toJSDate()];
 const dates = rows => rows.map(row => DateTime.fromISO(row.start,{zone}).toISODate());
 
+test('event notes retain multiline text through saving, editing and recurring occurrences; old events remain compatible', () => {
+  const notes = 'Chuẩn bị báo cáo.\nMang theo checklist <b>nội dung gốc</b>.';
+  const rule = {...defaultRecurrence('2026-10-06','daily'),endType:'count',count:2};
+  const saved = master('2026-10-06',rule,{notes});
+  assert.equal(eventForm(saved).notes,notes);
+  assert.ok(expandEvents([saved],...range('2026-10-06','2026-10-10'),zone).every(row => row.notes===notes));
+  assert.equal(buildEventData(form('2026-10-06'),null).notes,'');
+  assert.equal(eventForm({title:'Old',start:saved.start,end:saved.end},'2026-10-06').notes,'');
+  assert.throws(()=>buildEventData({...form('2026-10-06'),notes:'x'.repeat(20001)},null));
+});
+
 test('daily count includes the first occurrence and stops after the requested total', () => {
   const rule = {...defaultRecurrence('2026-10-03','daily'),endType:'count',count:3};
   const event = master('2026-10-03',rule);

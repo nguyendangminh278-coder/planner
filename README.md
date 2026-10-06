@@ -33,6 +33,7 @@ npm run preview
 
 - Đăng nhập/đăng xuất Google; khôi phục phiên đăng nhập.
 - Thêm, sửa, xóa lịch và đồng bộ realtime bằng Firestore.
+- Ghi chú nhiều dòng khi thêm/sửa lịch, tối đa 20.000 ký tự; đọc được trong chi tiết lịch được chia sẻ. Lịch lặp dùng chung ghi chú của chuỗi; lịch cũ chưa có ghi chú vẫn dùng được.
 - Tạo, sửa, xóa công việc, các bước, tiến độ và nội dung/ghi chú bậc 3.
 - Ô tròn bên trái đánh dấu hoàn thành/bỏ hoàn thành; công việc hoàn thành vẫn ở danh sách với chữ xám gạch ngang. Nút thùng rác đỏ bên phải xóa công việc và các bước sau khi xác nhận.
 - Chia sẻ toàn bộ lịch và công việc ba cấp theo email Google đã xác minh, gồm các bước và ghi chú. Người nhận chọn chủ lịch để xem riêng, với quyền chỉ đọc. Có thể thu hồi quyền xem.

@@ -18,10 +18,11 @@ service cloud.firestore {
     }
     function validEvent(data) {
       return data.keys().hasAll(['ownerId', 'title', 'start', 'end', 'color'])
-        && data.keys().hasOnly(['ownerId', 'owner', 'title', 'start', 'end', 'color', 'createdAt', 'updatedAt', 'allDay', 'timeZone', 'recurrence'])
+        && data.keys().hasOnly(['ownerId', 'owner', 'title', 'notes', 'start', 'end', 'color', 'createdAt', 'updatedAt', 'allDay', 'timeZone', 'recurrence'])
         && data.title is string && data.title.size() > 0 && data.title.size() <= 200
         && data.start is string && data.end is string && data.start < data.end
         && data.color is string
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 20000))
         && (!('allDay' in data) || data.allDay is bool)
         && (!('timeZone' in data) || (data.timeZone is string && data.timeZone.size() > 0 && data.timeZone.size() <= 100))
         && (!('recurrence' in data) || validRecurrence(data.recurrence))
