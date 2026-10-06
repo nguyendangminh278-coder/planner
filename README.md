@@ -57,6 +57,10 @@ Lịch lặp xuất hiện trong cả hai kiểu xem và planner được chia s
 
 ## Hoàn thành và xóa công việc
 
+**Việc đang chạy** có nút **Timeline / Lưới giờ**; **Việc cần làm** có **Danh sách / Lưới giờ**, áp dụng cùng bộ lọc Hôm nay/Sắp tới/Đã hoàn thành. Lưới giữ màu từng ngày như lịch tuần, mặc định cuộn tới 08:00, hỗ trợ Chủ nhật khi bật cột đó. Chọn **Công việc**, **Các bước** hoặc **Công việc & các bước** trong lưới. Mục cả ngày ở hàng trên; mục có giờ nằm đúng ngày/giờ của người xem, được chia khi qua đêm. Các mục trùng giờ có cột riêng; có thể mở chi tiết và tích hoàn thành ngay trong lưới.
+
+Danh sách và timeline có vùng cuộn riêng, tối đa năm công việc trong khung và cao tối đa 520px. Tất cả công việc vẫn có trong danh sách; cuộn lên/xuống để xem tiếp, dùng Tab rồi phím mũi tên/Page Up/Page Down để cuộn bằng bàn phím. Mở các bước vẫn được giữ trong vùng cuộn. Lưới giờ có chiều cao giới hạn và cuộn theo giờ; danh sách cả ngày cũng cuộn khi dài.
+
 Trong **Thêm/Cập nhật công việc**, chọn ngày bắt đầu–kết thúc và **Cả ngày** hoặc bỏ tích để nhập **Từ giờ / Đến giờ**. Mỗi bước cũng có lựa chọn riêng. Múi giờ áp dụng cho cả công việc và các bước. Ngày kết thúc của mục cả ngày được tính bao gồm ngày đó; mục có giờ dùng đúng mốc bắt đầu và kết thúc đã chọn, kể cả khi qua đêm/nhiều ngày. Nếu qua đêm, chọn ngày kết thúc là ngày hôm sau.
 
 Mốc thời gian xuất hiện trên **Việc cần làm**, các bước, nhãn và thanh timeline **Việc đang chạy**, cùng chi tiết planner được chia sẻ. Bước cần nằm trọn trong thời gian công việc; một bước cả ngày không thể nằm trong công việc chỉ dài vài giờ. Giờ lưu ở `startTime` / `endTime` (HH:mm), cùng `allDay` và `timeZone`; ngày `start` / `end` vẫn giữ định dạng YYYY-MM-DD. Công việc cũ mặc định cả ngày và tiếp tục dùng được. Đánh dấu hoàn thành/bỏ hoàn thành vẫn giữ các mốc giờ.

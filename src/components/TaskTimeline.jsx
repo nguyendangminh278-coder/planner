@@ -1,9 +1,11 @@
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Grid2X2, List } from 'lucide-react';
 import { useState } from 'react';
 import { clipToWeek, dateKey } from '../lib/date';
 import { CompletionButton } from './TaskActions';
 import { firebaseError } from '../lib/firebase';
 import { taskTimeLabel, taskRangeLabel } from '../lib/taskSchedule';
+import TaskTimeGrid from './TaskTimeGrid';
+import BoundedTaskList from './BoundedTaskList';
 
 function SpanBar({item, days, parent=false, onSelect}) {
   const span = clipToWeek(item.start, item.end, days);
@@ -31,6 +33,7 @@ function TaskLinks({task, days}) {
 
 export default function TaskTimeline({days, tasks, onSelect, readOnly=false, onToggle, onStepToggle}) {
   const [open,setOpen]=useState({});
+  const [view,setView]=useState('timeline');
   const [busy,setBusy]=useState(null), [error,setError]=useState('');
   async function act(task, action) {
     if (busy) return;
@@ -38,11 +41,12 @@ export default function TaskTimeline({days, tasks, onSelect, readOnly=false, onT
     try { await action(); } catch (err) { setError(firebaseError(err)); } finally { setBusy(null); }
   }
   return <section className="timeline-section" style={{'--week-count':days.length}}>
-    <div className="section-head"><div><span className="eyebrow">3-LEVEL TODO</span><h2>Việc đang chạy</h2></div><p>Bậc 1 ở trên, các bước bậc 2 chạy nối tiếp bên dưới; click để xem nội dung chi tiết bậc 3.</p></div>
+    <div className="section-head"><div><span className="eyebrow">3-LEVEL TODO</span><h2>Việc đang chạy</h2></div><div className="calendar-view-switch" role="group" aria-label="Kiểu xem việc đang chạy"><button type="button" className={view==='timeline'?'active':''} aria-pressed={view==='timeline'} onClick={()=>setView('timeline')}><List size={15}/>Timeline</button><button type="button" className={view==='grid'?'active':''} aria-pressed={view==='grid'} onClick={()=>setView('grid')}><Grid2X2 size={15}/>Lưới giờ</button></div></div>
+    {view==='grid' ? <TaskTimeGrid days={days} tasks={tasks} onSelect={onSelect} onToggle={onToggle} onStepToggle={onStepToggle} label="Lưới giờ việc đang chạy"/> : <><p className="task-scroll-note">Bậc 1 ở trên, các bước bậc 2 nối bên dưới. Hiện tối đa 5 việc; cuộn để xem tiếp.</p><div className="timeline-scroll-shell"><div className="timeline-scroll-content">
     <div className="timeline-head"><span>Công việc</span>{days.map(d=><span key={dateKey(d)}>{d.toLocaleDateString('vi-VN',{weekday:'short'})}<b>{d.getDate()}</b></span>)}</div>
-    <div className="timeline-body">
+    <BoundedTaskList className="timeline-body" label="Danh sách việc đang chạy" resetKey={null}>
       {error && <p className="error-message" role="alert">{error}</p>}
-      {tasks.map(task => <div className={`task-group ${task.progress >= 100 ? 'is-completed' : ''}`} key={task.id}>
+      {tasks.map(task => <div data-task-card className={`task-group ${task.progress >= 100 ? 'is-completed' : ''}`} key={task.id}>
         {(open[task.id] ?? true) && <TaskLinks task={task} days={days}/>}
         <div className="timeline-row parent-row">
           <div className="task-label"><button className="icon-btn" aria-label={`Ẩn/hiện bước: ${task.title}`} onClick={()=>setOpen(o=>({...o,[task.id]:!(o[task.id] ?? true)}))}>{(open[task.id] ?? true)?<ChevronDown size={16}/>:<ChevronRight size={16}/>}</button><CompletionButton title={task.title} completed={task.progress >= 100} busy={!!busy} onToggle={onToggle ? () => act(task,() => onToggle(task)) : null}/><button className="text-btn" onClick={()=>onSelect(task)}><b>{task.title}</b><small className="timeline-schedule">{taskTimeLabel(task)}</small></button><span>{task.progress}%</span></div>
@@ -54,6 +58,6 @@ export default function TaskTimeline({days, tasks, onSelect, readOnly=false, onT
         </div>)}
       </div>)}
       {!tasks.length && <p className="empty-state">{readOnly ? 'Người này chưa có công việc.' : 'Chưa có công việc. Chọn “Thêm công việc” để bắt đầu.'}</p>}
-    </div>
+    </BoundedTaskList></div></div></>}
   </section>
 }
