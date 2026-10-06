@@ -9,7 +9,7 @@ function SpanBar({item, days, parent=false, onSelect}) {
   const span = clipToWeek(item.start, item.end, days);
   if (!span) return null;
   return <button onClick={()=>onSelect(item)} title={`${item.title} · ${taskRangeLabel(item)}`} className={`timeline-bar ${parent?'parent':''} ${item.progress >= 100 ? 'is-completed' : ''}`} style={{ gridColumn:`${span.startIndex+2} / ${span.endIndex+3}`, background:item.color }}>
-    <span>{item.title}</span><small>{taskTimeLabel(item)} · {item.start.slice(5).replace('-','/')} → {item.end.slice(5).replace('-','/')}</small>
+    <span>{item.title}</span><small>{taskTimeLabel(item)} · {item.start.split('-').slice(1).reverse().join('/')} → {item.end.split('-').slice(1).reverse().join('/')}</small>
     <i style={{width:`${item.progress||0}%`}}></i>
   </button>
 }
