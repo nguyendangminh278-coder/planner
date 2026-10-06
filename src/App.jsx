@@ -13,6 +13,8 @@ import EventDetails from './components/EventDetails';
 import { TaskList, PlanningSummary } from './components/TaskOverview';
 import useSharedPlanner from './lib/useSharedPlanner';
 import { expandEvents } from './lib/recurrence';
+import { taskCompletionPatch } from './lib/taskActions';
+import useClassTaskStates from './lib/useClassTaskStates';
 import { weekDays, fmtShort, dateKey } from './lib/date';
 import { demoEvents, demoTasks, demoUser } from './lib/mock';
 import { auth, db, onAuthStateChanged, signOut, collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, doc, serverTimestamp, firebaseError } from './lib/firebase';
@@ -39,6 +41,7 @@ export default function App() {
   const peer = owners.find(owner => owner.ownerId === selectedOwner);
   const viewingShared = !!peer, viewOwner = viewingShared ? selectedOwner : 'me';
   const peerName = peer?.ownerName || '';
+  const classTaskState = useClassTaskStates(user,demo,classOpen && !viewingShared);
   const ownOccurrences = useMemo(() => expandSafely(events,range), [events,range]);
   const peerOccurrences = useMemo(() => expandSafely(peerPlanner.events,range), [peerPlanner.events,range]);
 
@@ -89,6 +92,11 @@ export default function App() {
     if (demo) { (kind === 'events' ? setEvents : setTasks)(rows => rows.filter(row => row.id !== id)); return; }
     if (!user) throw new Error('Not signed in');
     await deleteDoc(doc(db, kind, id));
+  }
+  async function toggleTask(task) {
+    const current = tasks.find(row => row.id === task.id);
+    if (!current) throw new Error('Công việc không còn tồn tại.');
+    await saveRecord('tasks',taskCompletionPatch(current),current.id);
   }
   async function logout() {
     try { if (demo) { setDemo(false); setEvents([]); setTasks([]); setExternal([]); setOwnReady(false); setSelectedOwner('me'); setCompare(false); setSelected(null); setReadEvent(null); setClassOpen(false); setError(''); } else await signOut(auth); }
@@ -148,8 +156,8 @@ export default function App() {
       </section>
       {viewingShared && compare && <SharedAvailability days={days} mine={ownOccurrences.rows} theirs={peerOccurrences.rows} ready={ownReady && peerPlanner.ready && !peerPlanner.error && !ownOccurrences.error && !peerOccurrences.error} peerName={peerName}/>}
       <TaskTimeline key={viewOwner} days={days} tasks={displayedTasks} onSelect={chooseTask} readOnly={viewingShared}/>
-      <div className="planning-workbench"><TaskList key={viewOwner} tasks={displayedTasks} onSelect={chooseTask} ownerName={peerName} onAdd={viewingShared ? null : () => newTask({ start: dateKey(new Date()), end: dateKey(new Date()) })}/><PlanningSummary tasks={displayedTasks} events={baseEvents} calendarRange={range} onSelect={chooseTask} ownerName={peerName} onShare={viewingShared ? null : () => setShareOpen(true)} onClass={viewingShared ? null : () => setClassOpen(open => !open)} classOpen={classOpen}/></div>
-      {!viewingShared && classOpen && <Suspense fallback={<p role="status">Đang mở lịch lớp…</p>}><ClassBoard days={days} onClose={() => setClassOpen(false)}/></Suspense>}
+      <div className="planning-workbench"><TaskList key={viewOwner} tasks={displayedTasks} onSelect={chooseTask} ownerName={peerName} onToggle={viewingShared ? null : toggleTask} onDelete={viewingShared ? null : task => removeRecord('tasks',task.id)} onAdd={viewingShared ? null : () => newTask({ start: dateKey(new Date()), end: dateKey(new Date()) })}/><PlanningSummary tasks={displayedTasks} events={baseEvents} calendarRange={range} onSelect={chooseTask} ownerName={peerName} onShare={viewingShared ? null : () => setShareOpen(true)} onClass={viewingShared ? null : () => setClassOpen(open => !open)} classOpen={classOpen}/></div>
+      {!viewingShared && classOpen && <Suspense fallback={<p role="status">Đang mở lịch lớp…</p>}><ClassBoard key={demo ? 'demo-class' : user.uid} taskState={classTaskState} days={days} onClose={() => setClassOpen(false)}/></Suspense>}
     </main>
     {selectedTask && <TaskDrawer key={`${viewOwner}:${selectedTask.id || 'new'}`} item={selectedTask} readOnly={viewingShared} ownerName={peerName} onClose={() => setSelected(null)} onSave={(data, id) => saveRecord('tasks', data, id)} onDelete={id => removeRecord('tasks', id)}/>}
     {!viewingShared && eventEditor && <AddEventModal key={eventEditor.id || 'new'} item={eventEditor.id ? eventEditor : null} initialDate={eventEditor.initialDate || dateKey(days[0])} onClose={() => setEventEditor(null)} onAdd={(data, id) => saveRecord('events', data, id)} onDelete={id => removeRecord('events', id)}/>}

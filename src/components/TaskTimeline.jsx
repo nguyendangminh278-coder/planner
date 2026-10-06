@@ -32,7 +32,7 @@ export default function TaskTimeline({days, tasks, onSelect, readOnly=false}) {
     <div className="section-head"><div><span className="eyebrow">3-LEVEL TODO</span><h2>Việc đang chạy</h2></div><p>Bậc 1 ở trên, các bước bậc 2 chạy nối tiếp bên dưới; click để xem nội dung chi tiết bậc 3.</p></div>
     <div className="timeline-head"><span>Công việc</span>{days.map(d=><span key={dateKey(d)}>{d.toLocaleDateString('vi-VN',{weekday:'short'})}<b>{d.getDate()}</b></span>)}</div>
     <div className="timeline-body">
-      {tasks.map(task => <div className="task-group" key={task.id}>
+      {tasks.map(task => <div className={`task-group ${task.progress >= 100 ? 'is-completed' : ''}`} key={task.id}>
         {(open[task.id] ?? true) && <TaskLinks task={task} days={days}/>}
         <div className="timeline-row parent-row">
           <div className="task-label"><button className="icon-btn" aria-label={`Ẩn/hiện bước: ${task.title}`} onClick={()=>setOpen(o=>({...o,[task.id]:!(o[task.id] ?? true)}))}>{(open[task.id] ?? true)?<ChevronDown size={16}/>:<ChevronRight size={16}/>}</button><button className="text-btn" onClick={()=>onSelect(task)}>{task.title}</button><span>{task.progress}%</span></div>

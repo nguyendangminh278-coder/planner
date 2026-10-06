@@ -34,6 +34,7 @@ npm run preview
 - Đăng nhập/đăng xuất Google; khôi phục phiên đăng nhập.
 - Thêm, sửa, xóa lịch và đồng bộ realtime bằng Firestore.
 - Tạo, sửa, xóa công việc, các bước, tiến độ và nội dung/ghi chú bậc 3.
+- Ô tròn bên trái đánh dấu hoàn thành/bỏ hoàn thành; công việc hoàn thành vẫn ở danh sách với chữ xám gạch ngang. Nút thùng rác đỏ bên phải xóa công việc và các bước sau khi xác nhận.
 - Chia sẻ toàn bộ lịch và công việc ba cấp theo email Google đã xác minh, gồm các bước và ghi chú. Người nhận chọn chủ lịch để xem riêng, với quyền chỉ đọc. Có thể thu hồi quyền xem.
 - Hồ sơ người dùng chỉ chủ tài khoản truy cập được.
 - Firebase Analytics với measurement ID đã cung cấp; không làm gián đoạn ứng dụng khi trình duyệt không hỗ trợ hoặc chặn analytics.
@@ -53,6 +54,14 @@ Mỗi chuỗi lưu một document Firestore, cùng `timeZone` IANA và map `recu
 **Cả ngày** có ngày kết thúc bao gồm ngày đang chọn; dữ liệu lưu mốc kết thúc ở đầu ngày kế tiếp. Lịch cả ngày giữ cùng ngày lịch khi người xem ở múi giờ khác. **Hiện Chủ nhật** thêm cột thứ bảy của tuần; tự bật khi lưu lịch bắt đầu hoặc lặp vào Chủ nhật.
 
 Lịch lặp xuất hiện trong cả hai kiểu xem và planner được chia sẻ. Đối chiếu và khoảng trống chung tính cả từng lần lặp và lịch cả ngày. Sửa/xóa từ bất kỳ lần xuất hiện nào hiện áp dụng cho **toàn bộ chuỗi**; chưa hỗ trợ ngoại lệ cho một lần riêng lẻ.
+
+## Hoàn thành và xóa công việc
+
+Trong **Việc cần làm**, bấm ô tròn để đánh dấu hoàn thành (tiến độ 100%). Công việc giữ nguyên trong tab Hôm nay/Sắp tới theo ngày bắt đầu, có chữ gạch ngang màu xám và cũng xuất hiện trong tab Đã hoàn thành. Bấm lại ô tròn để khôi phục tiến độ trước khi đánh dấu. Các bước và ghi chú không bị thay đổi; timeline cũng chuyển công việc hoàn thành sang màu xám.
+
+Nút thùng rác đỏ mở xác nhận xóa. Xác nhận sẽ xóa document công việc cùng các bước/ghi chú khỏi Firestore và loại bỏ khỏi danh sách, timeline và tổng quan. Khi xem planner được chia sẻ, người nhận chỉ xem trạng thái; không có quyền tích hoặc xóa.
+
+Task trong **Lịch & công việc của lớp** có cùng hai nút ở cả bảng tuần và danh sách deadline. Hoàn thành giữ task với chữ xám gạch ngang; xóa chỉ bỏ khỏi Planner của tài khoản hiện tại, theo lựa chọn của chủ dự án. Trạng thái lưu riêng trong `profiles/{uid}/classTaskStates/{class:id}` (sourceId, completed, deleted, updatedAt), đồng bộ Firebase giữa các thiết bị và còn sau khi làm mới/mở lại. Supabase tiếp tục chỉ được đọc, dữ liệu chung của lớp không bị sửa/xóa. Trạng thái riêng này không nằm trong quyền chia sẻ planner. Bản demo lưu trạng thái trong phiên và không ghi Firebase.
 
 ## Giao diện và thời tiết cảm xúc từ todolist-main
 
@@ -114,8 +123,9 @@ Chế độ demo có một planner Bùi Duy Tiến để thử xem riêng, đố
 ## Dữ liệu Firestore
 
 - `events/{id}`: lịch riêng của `ownerId`, thời gian ISO UTC, title, color, owner, timestamps; tùy chọn allDay, timeZone và recurrence (frequency, interval, weekdays ISO 1–7, monthlyMode, endType, untilDate, count). Lịch cũ không có trường mới vẫn dùng được.
-- `tasks/{id}`: công việc riêng của `ownerId`, ngày `YYYY-MM-DD`, progress, details, color, timestamps và mảng steps. Mỗi công việc tối đa 30 bước.
+- `tasks/{id}`: công việc riêng của `ownerId`, ngày `YYYY-MM-DD`, progress, previousProgress tùy chọn (để bỏ hoàn thành), details, color, timestamps và mảng steps. Mỗi công việc tối đa 30 bước.
 - `profiles/{uid}`: displayName, email, photoURL, updatedAt.
+- `profiles/{uid}/classTaskStates/{class:id}`: trạng thái hoàn thành/xóa task lớp của riêng tài khoản, không chia sẻ và không ghi sang nguồn lớp.
 - `calendarShares/{ownerUid}/viewers/{emailLowercase}`: ownerId, ownerName, viewerEmail, permission=`read`, createdAt.
 
 Indexes cho truy vấn collection group `viewers` được định nghĩa trong `firestore.indexes.json`. Dữ liệu demo không được tự động ghi vào database. Thiết kế hiện tại đọc toàn bộ lịch/công việc của mỗi chủ tài khoản; nếu dữ liệu lớn, cần thêm phân trang và truy vấn theo khoảng ngày. Các bước được lưu cùng document công việc, nên chỉnh sửa đồng thời cùng một công việc dùng cơ chế lần lưu sau cùng.

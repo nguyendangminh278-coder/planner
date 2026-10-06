@@ -1,20 +1,33 @@
 import { useState } from 'react';
 import { Sun, CalendarDays, CheckCircle2, Clock3, Plus, ArrowUpRight } from 'lucide-react';
 import { dateKey } from '../lib/date';
+import { isTaskComplete, taskTabs } from '../lib/taskActions';
+import { CompletionButton, DeleteTaskButton, TaskDeleteDialog } from './TaskActions';
+import { firebaseError } from '../lib/firebase';
 
-export function TaskList({ tasks, onSelect, onAdd, ownerName='' }) {
+export function TaskList({ tasks, onSelect, onAdd, onToggle, onDelete, ownerName='' }) {
   const [tab, setTab] = useState('today');
+  const [busy, setBusy] = useState(null), [error, setError] = useState('');
+  const [deleteTask,setDeleteTask] = useState(null);
   const today = dateKey(new Date());
+  const rows = taskTabs(tasks, today);
   const tabs = [
-    { id: 'today', title: 'Hôm nay', icon: Sun, rows: tasks.filter(task => task.progress < 100 && task.start <= today) },
-    { id: 'upcoming', title: 'Sắp tới', icon: CalendarDays, rows: tasks.filter(task => task.progress < 100 && task.start > today) },
-    { id: 'completed', title: 'Đã hoàn thành', icon: CheckCircle2, rows: tasks.filter(task => task.progress >= 100) },
+    { id: 'today', title: 'Hôm nay', icon: Sun, rows: rows.today },
+    { id: 'upcoming', title: 'Sắp tới', icon: CalendarDays, rows: rows.upcoming },
+    { id: 'completed', title: 'Đã hoàn thành', icon: CheckCircle2, rows: rows.completed },
   ];
+  async function act(task, action) {
+    if (busy) return;
+    setBusy(task.id); setError('');
+    try { await action(task); return true; } catch (err) { setError(firebaseError(err)); return false; } finally { setBusy(null); }
+  }
+  function remove(task) { setError(''); setDeleteTask(task); }
   const visible = tabs.find(item => item.id === tab).rows.toSorted((a, b) => a.start.localeCompare(b.start));
   return <section className="task-overview"><div className="section-head"><div><span className="eyebrow">YOUR NEXT STEPS</span><h2>Việc cần làm</h2></div>{onAdd && <button className="text-btn" onClick={onAdd}><Plus size={16}/>Thêm việc</button>}</div><div className="task-tabs" role="tablist" aria-label="Lọc công việc">{tabs.map(item => <button type="button" key={item.id} role="tab" id={`task-tab-${item.id}`} aria-controls="task-tab-content" aria-selected={tab === item.id} className={tab === item.id ? 'active' : ''} onClick={() => setTab(item.id)}><item.icon size={16}/>{item.title}<span>{item.rows.length}</span></button>)}</div><div id="task-tab-content" role="tabpanel" aria-labelledby={`task-tab-${tab}`}>
-    {visible.map(task => <button type="button" className="overview-task" key={task.id} onClick={() => onSelect(task)}><i style={{ background: task.color || '#ffe4e6' }}>{task.progress >= 100 ? <CheckCircle2 size={17}/> : <span className="overview-circle"/>}</i><span><b>{task.title}</b><small><CalendarDays size={12}/>{task.start.split('-').reverse().join('/')} → {task.end.split('-').reverse().join('/')}{task.end < today && task.progress < 100 ? <em>Quá hạn</em> : null}</small></span><strong>{task.progress || 0}%</strong><ArrowUpRight size={15}/></button>)}
+    {error && <p className="error-message" role="alert">{error}</p>}
+    {visible.map(task => <div className={`overview-task task-action-row ${isTaskComplete(task) ? 'is-completed' : ''}`} key={task.id} aria-busy={busy === task.id}><CompletionButton title={task.title} completed={isTaskComplete(task)} busy={!!busy} onToggle={onToggle ? () => act(task,onToggle) : null}/><button type="button" className="task-open" aria-label={`Xem công việc: ${task.title}`} onClick={() => onSelect(task)}><span><b className="task-title">{task.title}</b><small><CalendarDays size={12}/>{task.start.split('-').reverse().join('/')} → {task.end.split('-').reverse().join('/')}{task.end < today && !isTaskComplete(task) ? <em>Quá hạn</em> : null}</small></span><strong>{task.progress || 0}%</strong><ArrowUpRight size={15}/></button><DeleteTaskButton title={task.title} busy={!!busy} onDelete={onDelete ? () => remove(task) : null}/></div>)}
     {!visible.length && <p className="empty-state">{tab === 'today' ? ownerName ? 'Người này chưa có việc cần làm hôm nay. Chọn Sắp tới để xem các việc khác.' : 'Chưa có việc cần làm hôm nay. Bạn có thể xem Sắp tới hoặc thêm việc mới.' : tab === 'upcoming' ? 'Chưa có công việc sắp tới.' : 'Chưa có công việc đã hoàn thành.'}</p>}
-  </div></section>;
+  </div>{deleteTask && <TaskDeleteDialog title={deleteTask.title} busy={!!busy} error={error} onCancel={() => setDeleteTask(null)} onConfirm={async () => { if (await act(deleteTask,onDelete)) setDeleteTask(null); }}/>}</section>;
 }
 
 export function PlanningSummary({ tasks, events, onSelect, onShare, onClass, classOpen, ownerName='', calendarRange }) {

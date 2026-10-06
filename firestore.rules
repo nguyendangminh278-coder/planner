@@ -29,12 +29,13 @@ service cloud.firestore {
     }
     function validTask(data) {
       return data.keys().hasAll(['ownerId', 'title', 'start', 'end', 'progress', 'details', 'steps', 'color'])
-        && data.keys().hasOnly(['ownerId', 'owner', 'title', 'start', 'end', 'progress', 'details', 'steps', 'color', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerId', 'owner', 'title', 'start', 'end', 'progress', 'previousProgress', 'details', 'steps', 'color', 'createdAt', 'updatedAt'])
         && data.title is string && data.title.size() > 0 && data.title.size() <= 200
         && data.start is string && data.end is string && data.start <= data.end
         && data.progress is number && data.progress >= 0 && data.progress <= 100
         && data.details is string && data.details.size() <= 20000
-        && data.steps is list && data.steps.size() <= 30 && data.color is string;
+        && data.steps is list && data.steps.size() <= 30 && data.color is string
+        && (!('previousProgress' in data) || data.previousProgress == null || (data.previousProgress is number && data.previousProgress >= 0 && data.previousProgress < 100));
     }
     function sharedWithMe(ownerId) {
       return signedIn() && request.auth.token.email_verified == true
@@ -85,6 +86,15 @@ service cloud.firestore {
       allow read, delete: if signedIn() && request.auth.uid == uid;
       allow create, update: if signedIn() && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['displayName', 'email', 'photoURL', 'updatedAt']);
+    }
+    match /profiles/{uid}/classTaskStates/{itemId} {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasAll(['sourceId','completed','deleted','updatedAt'])
+        && request.resource.data.keys().hasOnly(['sourceId','completed','deleted','updatedAt'])
+        && request.resource.data.sourceId == itemId && itemId.matches('^class:[a-zA-Z0-9_-]+$') && itemId.size() <= 200
+        && request.resource.data.completed is bool && request.resource.data.deleted is bool
+        && request.resource.data.updatedAt == request.time;
     }
   }
 }

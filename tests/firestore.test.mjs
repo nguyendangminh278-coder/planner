@@ -150,3 +150,32 @@ test('invalid recurrence maps and missing timezone fields are rejected, includin
   }
   await assertFails(setDoc(ref,{...event,allDay:'yes',recurrence:null}));
 });
+
+test('personal task completion and undo preserve progress and remain owner-only', async () => {
+  await seed();
+  const ref = doc(dbFor('alice'),'tasks','task');
+  await assertSucceeds(updateDoc(ref,{progress:100,previousProgress:62}));
+  await setDoc(shareRef(dbFor('alice')),share);
+  assert.equal((await getDoc(doc(dbFor('bob'),'tasks','task'))).data().progress,100);
+  await assertFails(updateDoc(doc(dbFor('bob'),'tasks','task'),{progress:0,previousProgress:null}));
+  await assertSucceeds(updateDoc(ref,{progress:62,previousProgress:null}));
+  await assertFails(updateDoc(ref,{previousProgress:100}));
+});
+
+test('class task states survive rereading, are private per account and never shared by calendar grants', async () => {
+  const path = ['profiles','alice','classTaskStates','class:123'];
+  const ref = doc(dbFor('alice'),...path);
+  await assertSucceeds(setDoc(ref,{sourceId:'class:123',completed:true,deleted:false,updatedAt:serverTimestamp()}));
+  await assertSucceeds(getDocs(collection(dbFor('alice'),'profiles','alice','classTaskStates')));
+  await setDoc(shareRef(dbFor('alice')),share);
+  for (const db of [dbFor('bob'),env.unauthenticatedContext().firestore()]) {
+    await assertFails(getDoc(doc(db,...path)));
+    await assertFails(getDocs(collection(db,'profiles','alice','classTaskStates')));
+    await assertFails(setDoc(doc(db,...path),{sourceId:'class:123',completed:false,deleted:true,updatedAt:serverTimestamp()}));
+  }
+  await assertSucceeds(updateDoc(ref,{deleted:true,updatedAt:serverTimestamp()}));
+  assert.equal((await getDoc(ref)).data().deleted,true);
+  await assertSucceeds(setDoc(doc(dbFor('bob'),'profiles','bob','classTaskStates','class:123'),{sourceId:'class:123',completed:false,deleted:false,updatedAt:serverTimestamp()}));
+  await assertFails(setDoc(ref,{sourceId:'class:other',completed:true,deleted:false,updatedAt:serverTimestamp()}));
+  await assertFails(updateDoc(ref,{completed:'yes',updatedAt:serverTimestamp()}));
+});
