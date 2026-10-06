@@ -1,5 +1,5 @@
 import {createContext,useCallback,useContext,useEffect,useLayoutEffect,useMemo,useRef,useState} from 'react';
-import {createPortal} from 'react-dom';
+import {createPortal,flushSync} from 'react-dom';
 import mascotAtlas from '../assets/mascot/pose-atlas.png';
 import {mascotMutation,mascotAnchor} from '../lib/mascotAction';
 
@@ -45,9 +45,9 @@ export function MascotProvider({children}) {
   }
   async function move(to,pose='run',duration=650,flip=null) {
     const from=position.current || home();
-    setVisual(old=>({...old,pose,point:from,flip:flip ?? (pose==='run'&&to.x<from.x)})); await frame();
+    flushSync(()=>setVisual(old=>({...old,pose,point:from,flip:flip ?? (pose==='run'&&to.x<from.x)}))); await frame();
     await animate(actor.current,[{transform:`translate(${from.x}px,${from.y}px)`},{transform:`translate(${to.x}px,${to.y}px)`}],duration);
-    position.current=to; setVisual(old=>({...old,point:to})); await frame();
+    position.current=to; flushSync(()=>setVisual(old=>({...old,point:to}))); await frame();
   }
   const runAction=useCallback(async({kind,target,commit})=>{
     if(!available.current || !preference.current || !assetReady.current || reduced.current || working.current || !target?.row?.isConnected) return commit();
@@ -71,7 +71,7 @@ export function MascotProvider({children}) {
             for(const variable of ['--day-bg','--day-border','--day-ink'])ghost.style.setProperty(variable,computed.getPropertyValue(variable));
             (layer.current || document.body).appendChild(ghost);original.style.visibility='hidden';
             const distance=window.innerWidth-bounds.left+130;
-            setVisual(old=>({...old,pose:'drag',flip:false}));await frame();
+            flushSync(()=>setVisual(old=>({...old,pose:'drag',flip:false})));await frame();
             await Promise.all([animate(ghost,[{transform:'translateX(0) rotate(0deg)',opacity:1},{transform:`translateX(${distance}px) rotate(4deg)`,opacity:0}],850),move({x:start.x+distance,y:start.y},'drag',850)]);
           }else{
             if(!original.isConnected)throw new Error('Target removed');
@@ -79,7 +79,7 @@ export function MascotProvider({children}) {
             const updated=mascotAnchor(rect,window.innerWidth,window.innerHeight);
             if(Math.hypot(updated.x-start.x,updated.y-start.y)>2)await move(updated,'run',140);
             start=updated;
-            setVisual(old=>({...old,pose:'write',flip:start.reverse,stroke:{x:start.reverse?rect.right:rect.left,y:rect.top+rect.height*.5,width:start.reverse?-rect.width:rect.width}}));await frame();
+            flushSync(()=>setVisual(old=>({...old,pose:'write',flip:start.reverse,stroke:{x:start.reverse?rect.right:rect.left,y:rect.top+rect.height*.5,width:start.reverse?-rect.width:rect.width}})));await frame();
             const to={x:Math.max(4,Math.min(window.innerWidth-108,start.x+(start.reverse?-rect.width:rect.width))),y:start.y};
             await Promise.all([animate(line.current,[{strokeDashoffset:1},{strokeDashoffset:0}],520),move(to,'write',520,start.reverse)]);
           }
