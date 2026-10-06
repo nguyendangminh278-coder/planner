@@ -56,11 +56,11 @@ export default function TaskDrawer({ item, onClose, onSave, onDelete, readOnly=f
         <label>Tiến độ bước (%)<input required type="number" min="0" max="100" value={step.progress} onInput={e => changeStep(step.id, 'progress', e.target.value)}/></label>
         <label>Nội dung bậc 3<textarea maxLength={20000} value={step.details || ''} onInput={e => changeStep(step.id, 'details', e.target.value)}/></label>
         <ColorPicker value={step.color} onChange={color => changeStep(step.id, 'color', color)}/>
-        <button type="button" className="text-btn danger" onClick={() => change('steps', form.steps.filter(s => s.id !== step.id))}><Trash2 size={14}/>Bỏ bước</button>
+        <button type="button" className="text-btn danger" disabled={busy || mascot?.busy} onClick={() => change('steps', form.steps.filter(s => s.id !== step.id))}><Trash2 size={14}/>Bỏ bước</button>
       </fieldset>)}
-      <button type="button" className="soft-btn" disabled={busy || form.steps.length >= 30} onClick={() => change('steps', [...form.steps, scheduleDefaults({ id: crypto.randomUUID(), title: '', start: form.start, end: form.end, allDay:form.allDay, startTime:form.startTime, endTime:form.endTime, progress: 0, details: '', color: plannerColors[(form.steps.length+1)%plannerColors.length].value },form.timeZone)])}><Plus size={16}/>Thêm bước</button>
+      <button type="button" className="soft-btn" disabled={busy || mascot?.busy || form.steps.length >= 30} onClick={() => change('steps', [...form.steps, scheduleDefaults({ id: crypto.randomUUID(), title: '', start: form.start, end: form.end, allDay:form.allDay, startTime:form.startTime, endTime:form.endTime, progress: 0, details: '', color: plannerColors[(form.steps.length+1)%plannerColors.length].value },form.timeZone)])}><Plus size={16}/>Thêm bước</button>
       {error && <p className="error-message" role="alert">{error}</p>}
-      <p className="step-save-note">Các dấu tích trong bảng này được lưu khi bấm “Lưu cập nhật”.</p><button className="primary-btn" disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu cập nhật'}</button>
+      <p className="step-save-note">Các dấu tích trong bảng này được lưu khi bấm “Lưu cập nhật”.</p><button className="primary-btn" disabled={busy || mascot?.busy}>{busy ? 'Đang lưu…' : 'Lưu cập nhật'}</button>
       {item?.id && <button type="button" className="text-btn danger" onClick={()=>{mascot?.prepareDeleteForId(item.id);setError('');setDeleteOpen(true);}} disabled={busy || mascot?.busy}>Xóa công việc</button>}
     </form>
   </aside>{deleteOpen && <TaskDeleteDialog title={form.title} busy={busy} error={error} onCancel={()=>setDeleteOpen(false)} onConfirm={remove}/>}</div>;
