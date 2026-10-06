@@ -3,12 +3,13 @@ import { useState } from 'react';
 import { clipToWeek, dateKey } from '../lib/date';
 import { CompletionButton } from './TaskActions';
 import { firebaseError } from '../lib/firebase';
+import { taskTimeLabel, taskRangeLabel } from '../lib/taskSchedule';
 
 function SpanBar({item, days, parent=false, onSelect}) {
   const span = clipToWeek(item.start, item.end, days);
   if (!span) return null;
-  return <button onClick={()=>onSelect(item)} className={`timeline-bar ${parent?'parent':''} ${item.progress >= 100 ? 'is-completed' : ''}`} style={{ gridColumn:`${span.startIndex+2} / ${span.endIndex+3}`, background:item.color }}>
-    <span>{item.title}</span><small>{item.start.slice(5).replace('-','/')} → {item.end.slice(5).replace('-','/')}</small>
+  return <button onClick={()=>onSelect(item)} title={`${item.title} · ${taskRangeLabel(item)}`} className={`timeline-bar ${parent?'parent':''} ${item.progress >= 100 ? 'is-completed' : ''}`} style={{ gridColumn:`${span.startIndex+2} / ${span.endIndex+3}`, background:item.color }}>
+    <span>{item.title}</span><small>{taskTimeLabel(item)} · {item.start.slice(5).replace('-','/')} → {item.end.slice(5).replace('-','/')}</small>
     <i style={{width:`${item.progress||0}%`}}></i>
   </button>
 }
@@ -44,11 +45,11 @@ export default function TaskTimeline({days, tasks, onSelect, readOnly=false, onT
       {tasks.map(task => <div className={`task-group ${task.progress >= 100 ? 'is-completed' : ''}`} key={task.id}>
         {(open[task.id] ?? true) && <TaskLinks task={task} days={days}/>}
         <div className="timeline-row parent-row">
-          <div className="task-label"><button className="icon-btn" aria-label={`Ẩn/hiện bước: ${task.title}`} onClick={()=>setOpen(o=>({...o,[task.id]:!(o[task.id] ?? true)}))}>{(open[task.id] ?? true)?<ChevronDown size={16}/>:<ChevronRight size={16}/>}</button><CompletionButton title={task.title} completed={task.progress >= 100} busy={!!busy} onToggle={onToggle ? () => act(task,() => onToggle(task)) : null}/><button className="text-btn" onClick={()=>onSelect(task)}>{task.title}</button><span>{task.progress}%</span></div>
+          <div className="task-label"><button className="icon-btn" aria-label={`Ẩn/hiện bước: ${task.title}`} onClick={()=>setOpen(o=>({...o,[task.id]:!(o[task.id] ?? true)}))}>{(open[task.id] ?? true)?<ChevronDown size={16}/>:<ChevronRight size={16}/>}</button><CompletionButton title={task.title} completed={task.progress >= 100} busy={!!busy} onToggle={onToggle ? () => act(task,() => onToggle(task)) : null}/><button className="text-btn" onClick={()=>onSelect(task)}><b>{task.title}</b><small className="timeline-schedule">{taskTimeLabel(task)}</small></button><span>{task.progress}%</span></div>
           <SpanBar item={task} days={days} parent onSelect={onSelect}/>
         </div>
         {(open[task.id] ?? true) && task.steps?.map((step,idx)=><div className="timeline-row child-row" key={step.id}>
-          <div className={`task-label child ${step.progress >= 100 ? 'is-completed' : ''}`}><CompletionButton title={`Bước ${idx+1}: ${step.title} · ${task.title}`} completed={step.progress >= 100} busy={!!busy} onToggle={onStepToggle ? () => act(task,() => onStepToggle(task,step.id)) : null}/><button className="timeline-step-open" onClick={()=>onSelect(task)}>{idx+1}. {step.title}</button><em>{step.progress}%</em></div>
+          <div className={`task-label child ${step.progress >= 100 ? 'is-completed' : ''}`}><CompletionButton title={`Bước ${idx+1}: ${step.title} · ${task.title}`} completed={step.progress >= 100} busy={!!busy} onToggle={onStepToggle ? () => act(task,() => onStepToggle(task,step.id)) : null}/><button className="timeline-step-open" onClick={()=>onSelect(task)}><span>{idx+1}. {step.title}</span><small className="timeline-schedule">{taskTimeLabel({...step,timeZone:task.timeZone})}</small></button><em>{step.progress}%</em></div>
           <SpanBar item={step} days={days} onSelect={()=>onSelect(task)}/>
         </div>)}
       </div>)}

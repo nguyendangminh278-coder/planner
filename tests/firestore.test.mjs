@@ -201,3 +201,15 @@ test('concurrent step checks retain both changes, complete the parent and remain
   await assertSucceeds(updateDoc(ref,taskCompletionPatch(undone)));
   assert.equal((await getDoc(ref)).data().progress,100);
 });
+
+test('timed and all-day tasks can be saved with old tasks retained and shared viewers kept read-only', async () => {
+  const db = dbFor('alice'), ref = doc(db,'tasks','timed');
+  const value = {...task,allDay:false,startTime:'09:00',endTime:'17:00',timeZone:'Asia/Bangkok'};
+  await assertSucceeds(setDoc(ref,value));
+  await assertSucceeds(setDoc(doc(db,'tasks','all-day'),{...task,allDay:true,startTime:null,endTime:null,timeZone:'Asia/Bangkok'}));
+  await assertSucceeds(setDoc(doc(db,'tasks','legacy'),task));
+  await setDoc(shareRef(db),share);
+  assert.equal((await assertSucceeds(getDoc(doc(dbFor('bob'),'tasks','timed')))).data().startTime,'09:00');
+  await assertFails(updateDoc(doc(dbFor('bob'),'tasks','timed'),{startTime:'10:00'}));
+  for (const bad of [{...value,startTime:'25:00'},{...value,endTime:''},{...value,timeZone:''},{...task,allDay:false},{...value,allDay:true},{...value,end:task.start,endTime:'08:00'}]) await assertFails(setDoc(ref,bad));
+});

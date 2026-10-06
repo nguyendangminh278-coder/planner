@@ -57,6 +57,10 @@ Lịch lặp xuất hiện trong cả hai kiểu xem và planner được chia s
 
 ## Hoàn thành và xóa công việc
 
+Trong **Thêm/Cập nhật công việc**, chọn ngày bắt đầu–kết thúc và **Cả ngày** hoặc bỏ tích để nhập **Từ giờ / Đến giờ**. Mỗi bước cũng có lựa chọn riêng. Múi giờ áp dụng cho cả công việc và các bước. Ngày kết thúc của mục cả ngày được tính bao gồm ngày đó; mục có giờ dùng đúng mốc bắt đầu và kết thúc đã chọn, kể cả khi qua đêm/nhiều ngày. Nếu qua đêm, chọn ngày kết thúc là ngày hôm sau.
+
+Mốc thời gian xuất hiện trên **Việc cần làm**, các bước, nhãn và thanh timeline **Việc đang chạy**, cùng chi tiết planner được chia sẻ. Bước cần nằm trọn trong thời gian công việc; một bước cả ngày không thể nằm trong công việc chỉ dài vài giờ. Giờ lưu ở `startTime` / `endTime` (HH:mm), cùng `allDay` và `timeZone`; ngày `start` / `end` vẫn giữ định dạng YYYY-MM-DD. Công việc cũ mặc định cả ngày và tiếp tục dùng được. Đánh dấu hoàn thành/bỏ hoàn thành vẫn giữ các mốc giờ.
+
 Trong **Việc cần làm**, mỗi công việc có danh sách các bước với ô tròn riêng. Tích một bước đặt tiến độ bước ở 100%, chữ gạch ngang màu xám và giữ bước trên danh sách. Tiến độ công việc cập nhật theo trung bình tiến độ các bước; chỉ khi mọi bước đều xong mới đạt 100%. Bỏ tích một bước khôi phục tiến độ cũ của bước và đưa công việc về chưa hoàn thành. Có thể thu gọn danh sách bằng dòng số bước hoàn thành.
 
 Ô tròn của **công việc** hoàn thành luôn toàn bộ các bước. Bấm lại để khôi phục trạng thái trước đó; bước đã hoàn thành trước lần tích cả công việc vẫn giữ nguyên. Các ghi chú/nội dung bậc 3 được giữ lại. Công việc vẫn ở tab Hôm nay/Sắp tới theo ngày bắt đầu, có chữ xám gạch ngang và cũng xuất hiện trong tab Đã hoàn thành.
@@ -127,7 +131,7 @@ Chế độ demo có một planner Bùi Duy Tiến để thử xem riêng, đố
 ## Dữ liệu Firestore
 
 - `events/{id}`: lịch riêng của `ownerId`, thời gian ISO UTC, title, color, owner, timestamps; tùy chọn allDay, timeZone và recurrence (frequency, interval, weekdays ISO 1–7, monthlyMode, endType, untilDate, count). Lịch cũ không có trường mới vẫn dùng được.
-- `tasks/{id}`: công việc riêng của `ownerId`, ngày `YYYY-MM-DD`, progress, previousProgress tùy chọn (để bỏ hoàn thành), details, color, timestamps và mảng steps. Mỗi công việc tối đa 30 bước.
+- `tasks/{id}`: công việc riêng của `ownerId`, ngày `YYYY-MM-DD`, allDay, startTime/endTime (HH:mm hoặc null khi cả ngày), timeZone, progress, previousProgress tùy chọn (để bỏ hoàn thành), details, color, timestamps và mảng steps có cùng mốc ngày/giờ. Mỗi công việc tối đa 30 bước.
 - `profiles/{uid}`: displayName, email, photoURL, updatedAt.
 - `profiles/{uid}/classTaskStates/{class:id}`: trạng thái hoàn thành/xóa task lớp của riêng tài khoản, không chia sẻ và không ghi sang nguồn lớp.
 - `calendarShares/{ownerUid}/viewers/{emailLowercase}`: ownerId, ownerName, viewerEmail, permission=`read`, createdAt.

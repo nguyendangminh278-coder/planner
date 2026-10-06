@@ -27,14 +27,24 @@ service cloud.firestore {
         && (!('recurrence' in data) || validRecurrence(data.recurrence))
         && (!(('recurrence' in data && data.recurrence != null) || ('allDay' in data && data.allDay)) || 'timeZone' in data);
     }
+    function validTaskTime(data) {
+      return !data.keys().hasAny(['allDay','startTime','endTime','timeZone'])
+        || (data.keys().hasAll(['allDay','startTime','endTime','timeZone'])
+          && data.allDay is bool && data.timeZone is string && data.timeZone.size() > 0 && data.timeZone.size() <= 100
+          && data.start.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') && data.end.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && ((data.allDay && data.startTime == null && data.endTime == null)
+            || (!data.allDay && data.startTime is string && data.endTime is string
+              && data.startTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$') && data.endTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')
+              && (data.start < data.end || data.startTime < data.endTime))));
+    }
     function validTask(data) {
       return data.keys().hasAll(['ownerId', 'title', 'start', 'end', 'progress', 'details', 'steps', 'color'])
-        && data.keys().hasOnly(['ownerId', 'owner', 'title', 'start', 'end', 'progress', 'previousProgress', 'details', 'steps', 'color', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerId', 'owner', 'title', 'start', 'end', 'allDay', 'startTime', 'endTime', 'timeZone', 'progress', 'previousProgress', 'details', 'steps', 'color', 'createdAt', 'updatedAt'])
         && data.title is string && data.title.size() > 0 && data.title.size() <= 200
         && data.start is string && data.end is string && data.start <= data.end
         && data.progress is number && data.progress >= 0 && data.progress <= 100
         && data.details is string && data.details.size() <= 20000
-        && data.steps is list && data.steps.size() <= 30 && data.color is string
+        && data.steps is list && data.steps.size() <= 30 && data.color is string && validTaskTime(data)
         && (!('previousProgress' in data) || data.previousProgress == null || (data.previousProgress is number && data.previousProgress >= 0 && data.previousProgress < 100));
     }
     function sharedWithMe(ownerId) {
