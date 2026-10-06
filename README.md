@@ -57,7 +57,11 @@ Lịch lặp xuất hiện trong cả hai kiểu xem và planner được chia s
 
 ## Hoàn thành và xóa công việc
 
-Trong **Việc cần làm**, bấm ô tròn để đánh dấu hoàn thành (tiến độ 100%). Công việc giữ nguyên trong tab Hôm nay/Sắp tới theo ngày bắt đầu, có chữ gạch ngang màu xám và cũng xuất hiện trong tab Đã hoàn thành. Bấm lại ô tròn để khôi phục tiến độ trước khi đánh dấu. Các bước và ghi chú không bị thay đổi; timeline cũng chuyển công việc hoàn thành sang màu xám.
+Trong **Việc cần làm**, mỗi công việc có danh sách các bước với ô tròn riêng. Tích một bước đặt tiến độ bước ở 100%, chữ gạch ngang màu xám và giữ bước trên danh sách. Tiến độ công việc cập nhật theo trung bình tiến độ các bước; chỉ khi mọi bước đều xong mới đạt 100%. Bỏ tích một bước khôi phục tiến độ cũ của bước và đưa công việc về chưa hoàn thành. Có thể thu gọn danh sách bằng dòng số bước hoàn thành.
+
+Ô tròn của **công việc** hoàn thành luôn toàn bộ các bước. Bấm lại để khôi phục trạng thái trước đó; bước đã hoàn thành trước lần tích cả công việc vẫn giữ nguyên. Các ghi chú/nội dung bậc 3 được giữ lại. Công việc vẫn ở tab Hôm nay/Sắp tới theo ngày bắt đầu, có chữ xám gạch ngang và cũng xuất hiện trong tab Đã hoàn thành.
+
+Các ô tích cũng có ở timeline và bảng chi tiết. Danh sách/timeline lưu ngay vào Firebase; trong bảng chỉnh sửa, bấm **Lưu cập nhật** để lưu cùng nội dung đang chỉnh sửa. Khi có bước, ô tiến độ công việc được tính theo bước; công việc không có bước vẫn có thể nhập tiến độ riêng. Checkbox dùng transaction trên document mới nhất để hai thao tác ở các bước khác nhau không ghi đè nhau. Người xem lịch chia sẻ chỉ đọc trạng thái.
 
 Nút thùng rác đỏ mở xác nhận xóa. Xác nhận sẽ xóa document công việc cùng các bước/ghi chú khỏi Firestore và loại bỏ khỏi danh sách, timeline và tổng quan. Khi xem planner được chia sẻ, người nhận chỉ xem trạng thái; không có quyền tích hoặc xóa.
 
@@ -128,7 +132,7 @@ Chế độ demo có một planner Bùi Duy Tiến để thử xem riêng, đố
 - `profiles/{uid}/classTaskStates/{class:id}`: trạng thái hoàn thành/xóa task lớp của riêng tài khoản, không chia sẻ và không ghi sang nguồn lớp.
 - `calendarShares/{ownerUid}/viewers/{emailLowercase}`: ownerId, ownerName, viewerEmail, permission=`read`, createdAt.
 
-Indexes cho truy vấn collection group `viewers` được định nghĩa trong `firestore.indexes.json`. Dữ liệu demo không được tự động ghi vào database. Thiết kế hiện tại đọc toàn bộ lịch/công việc của mỗi chủ tài khoản; nếu dữ liệu lớn, cần thêm phân trang và truy vấn theo khoảng ngày. Các bước được lưu cùng document công việc, nên chỉnh sửa đồng thời cùng một công việc dùng cơ chế lần lưu sau cùng.
+Indexes cho truy vấn collection group `viewers` được định nghĩa trong `firestore.indexes.json`. Dữ liệu demo không được tự động ghi vào database. Thiết kế hiện tại đọc toàn bộ lịch/công việc của mỗi chủ tài khoản; nếu dữ liệu lớn, cần thêm phân trang và truy vấn theo khoảng ngày. Các bước được lưu cùng document công việc. Dấu tích dùng transaction; chỉnh sửa toàn bộ biểu mẫu đồng thời cùng một công việc vẫn dùng cơ chế lần lưu sau cùng.
 
 ## API lịch nhóm (tùy chọn)
 

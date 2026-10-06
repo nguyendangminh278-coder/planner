@@ -2,7 +2,8 @@ import { before, after, beforeEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { setDoc, getDoc, getDocs, updateDoc, deleteDoc, doc, collection, collectionGroup, query, where, serverTimestamp } from 'firebase/firestore';
+import { setDoc, getDoc, getDocs, updateDoc, deleteDoc, doc, collection, collectionGroup, query, where, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { stepCompletionPatch, taskCompletionPatch } from '../src/lib/taskActions.js';
 
 let env;
 before(async () => {
@@ -178,4 +179,25 @@ test('class task states survive rereading, are private per account and never sha
   await assertSucceeds(setDoc(doc(dbFor('bob'),'profiles','bob','classTaskStates','class:123'),{sourceId:'class:123',completed:false,deleted:false,updatedAt:serverTimestamp()}));
   await assertFails(setDoc(ref,{sourceId:'class:other',completed:true,deleted:false,updatedAt:serverTimestamp()}));
   await assertFails(updateDoc(ref,{completed:'yes',updatedAt:serverTimestamp()}));
+});
+
+test('concurrent step checks retain both changes, complete the parent and remain read-only to shared viewers', async () => {
+  const db = dbFor('alice'), ref = doc(db,'tasks','checklist');
+  await setDoc(ref,{...task,steps:[{id:'one',progress:0,details:'First notes'},{id:'two',progress:0,details:'Second notes'}]});
+  await Promise.all(['one','two'].map(stepId => runTransaction(db,async tx => {
+    const snapshot = await tx.get(ref);
+    tx.update(ref,{...stepCompletionPatch(snapshot.data(),stepId),updatedAt:serverTimestamp()});
+  })));
+  const saved = (await getDoc(ref)).data();
+  assert.equal(saved.progress,100);
+  assert.ok(saved.steps.every(step => step.progress === 100));
+  assert.equal(saved.steps[0].details,'First notes');
+  await setDoc(shareRef(db),share);
+  await assertFails(updateDoc(doc(dbFor('bob'),'tasks','checklist'),stepCompletionPatch(saved,'one')));
+  await assertSucceeds(updateDoc(ref,stepCompletionPatch(saved,'one')));
+  const undone = (await getDoc(ref)).data();
+  assert.equal(undone.progress,50);
+  assert.equal(undone.steps[1].progress,100);
+  await assertSucceeds(updateDoc(ref,taskCompletionPatch(undone)));
+  assert.equal((await getDoc(ref)).data().progress,100);
 });

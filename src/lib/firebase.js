@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, collectionGroup, addDoc, setDoc, updateDoc, doc, deleteDoc, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, collectionGroup, addDoc, setDoc, updateDoc, doc, deleteDoc, query, where, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore';
 
 // Firebase web configuration is public. Data access is enforced by firestore.rules.
 const config = {
@@ -24,4 +24,4 @@ export const analyticsReady = typeof window !== 'undefined'
   : Promise.resolve(null);
 
 export { firebaseError } from './firebaseMessages';
-export { signInWithPopup, signOut, onAuthStateChanged, collection, collectionGroup, addDoc, setDoc, updateDoc, doc, deleteDoc, query, where, onSnapshot, serverTimestamp };
+export { signInWithPopup, signOut, onAuthStateChanged, collection, collectionGroup, addDoc, setDoc, updateDoc, doc, deleteDoc, query, where, onSnapshot, serverTimestamp, runTransaction };

@@ -1,11 +1,13 @@
-import { ChevronDown, ChevronRight, Circle, CheckCircle2 } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { clipToWeek, dateKey } from '../lib/date';
+import { CompletionButton } from './TaskActions';
+import { firebaseError } from '../lib/firebase';
 
 function SpanBar({item, days, parent=false, onSelect}) {
   const span = clipToWeek(item.start, item.end, days);
   if (!span) return null;
-  return <button onClick={()=>onSelect(item)} className={`timeline-bar ${parent?'parent':''}`} style={{ gridColumn:`${span.startIndex+2} / ${span.endIndex+3}`, background:item.color }}>
+  return <button onClick={()=>onSelect(item)} className={`timeline-bar ${parent?'parent':''} ${item.progress >= 100 ? 'is-completed' : ''}`} style={{ gridColumn:`${span.startIndex+2} / ${span.endIndex+3}`, background:item.color }}>
     <span>{item.title}</span><small>{item.start.slice(5).replace('-','/')} → {item.end.slice(5).replace('-','/')}</small>
     <i style={{width:`${item.progress||0}%`}}></i>
   </button>
@@ -26,20 +28,27 @@ function TaskLinks({task, days}) {
   </svg>;
 }
 
-export default function TaskTimeline({days, tasks, onSelect, readOnly=false}) {
+export default function TaskTimeline({days, tasks, onSelect, readOnly=false, onToggle, onStepToggle}) {
   const [open,setOpen]=useState({});
+  const [busy,setBusy]=useState(null), [error,setError]=useState('');
+  async function act(task, action) {
+    if (busy) return;
+    setBusy(task.id); setError('');
+    try { await action(); } catch (err) { setError(firebaseError(err)); } finally { setBusy(null); }
+  }
   return <section className="timeline-section" style={{'--week-count':days.length}}>
     <div className="section-head"><div><span className="eyebrow">3-LEVEL TODO</span><h2>Việc đang chạy</h2></div><p>Bậc 1 ở trên, các bước bậc 2 chạy nối tiếp bên dưới; click để xem nội dung chi tiết bậc 3.</p></div>
     <div className="timeline-head"><span>Công việc</span>{days.map(d=><span key={dateKey(d)}>{d.toLocaleDateString('vi-VN',{weekday:'short'})}<b>{d.getDate()}</b></span>)}</div>
     <div className="timeline-body">
+      {error && <p className="error-message" role="alert">{error}</p>}
       {tasks.map(task => <div className={`task-group ${task.progress >= 100 ? 'is-completed' : ''}`} key={task.id}>
         {(open[task.id] ?? true) && <TaskLinks task={task} days={days}/>}
         <div className="timeline-row parent-row">
-          <div className="task-label"><button className="icon-btn" aria-label={`Ẩn/hiện bước: ${task.title}`} onClick={()=>setOpen(o=>({...o,[task.id]:!(o[task.id] ?? true)}))}>{(open[task.id] ?? true)?<ChevronDown size={16}/>:<ChevronRight size={16}/>}</button><button className="text-btn" onClick={()=>onSelect(task)}>{task.title}</button><span>{task.progress}%</span></div>
+          <div className="task-label"><button className="icon-btn" aria-label={`Ẩn/hiện bước: ${task.title}`} onClick={()=>setOpen(o=>({...o,[task.id]:!(o[task.id] ?? true)}))}>{(open[task.id] ?? true)?<ChevronDown size={16}/>:<ChevronRight size={16}/>}</button><CompletionButton title={task.title} completed={task.progress >= 100} busy={!!busy} onToggle={onToggle ? () => act(task,() => onToggle(task)) : null}/><button className="text-btn" onClick={()=>onSelect(task)}>{task.title}</button><span>{task.progress}%</span></div>
           <SpanBar item={task} days={days} parent onSelect={onSelect}/>
         </div>
         {(open[task.id] ?? true) && task.steps?.map((step,idx)=><div className="timeline-row child-row" key={step.id}>
-          <button className="task-label child" onClick={()=>onSelect(task)}>{step.progress===100?<CheckCircle2 size={15}/>:<Circle size={15}/>}<span>{idx+1}. {step.title}</span><em>{step.progress}%</em></button>
+          <div className={`task-label child ${step.progress >= 100 ? 'is-completed' : ''}`}><CompletionButton title={`Bước ${idx+1}: ${step.title} · ${task.title}`} completed={step.progress >= 100} busy={!!busy} onToggle={onStepToggle ? () => act(task,() => onStepToggle(task,step.id)) : null}/><button className="timeline-step-open" onClick={()=>onSelect(task)}>{idx+1}. {step.title}</button><em>{step.progress}%</em></div>
           <SpanBar item={step} days={days} onSelect={()=>onSelect(task)}/>
         </div>)}
       </div>)}

@@ -13,11 +13,11 @@ import EventDetails from './components/EventDetails';
 import { TaskList, PlanningSummary } from './components/TaskOverview';
 import useSharedPlanner from './lib/useSharedPlanner';
 import { expandEvents } from './lib/recurrence';
-import { taskCompletionPatch } from './lib/taskActions';
+import { taskCompletionPatch, stepCompletionPatch } from './lib/taskActions';
 import useClassTaskStates from './lib/useClassTaskStates';
 import { weekDays, fmtShort, dateKey } from './lib/date';
 import { demoEvents, demoTasks, demoUser } from './lib/mock';
-import { auth, db, onAuthStateChanged, signOut, collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, doc, serverTimestamp, firebaseError } from './lib/firebase';
+import { auth, db, onAuthStateChanged, signOut, collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, doc, serverTimestamp, firebaseError, runTransaction } from './lib/firebase';
 
 function Avatar({ user }) { return user.photoURL ? <img className="avatar" src={user.photoURL} alt="Ảnh tài khoản" referrerPolicy="no-referrer"/> : <div className="avatar fallback">{(user.displayName || 'U').slice(0, 1)}</div>; }
 const unpack = snapshot => snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
@@ -93,11 +93,18 @@ export default function App() {
     if (!user) throw new Error('Not signed in');
     await deleteDoc(doc(db, kind, id));
   }
-  async function toggleTask(task) {
-    const current = tasks.find(row => row.id === task.id);
-    if (!current) throw new Error('Công việc không còn tồn tại.');
-    await saveRecord('tasks',taskCompletionPatch(current),current.id);
+  async function changeCompletion(task, patch) {
+    if (viewingShared || (!demo && !user)) throw new Error('Không có quyền sửa công việc.');
+    if (demo) { setTasks(rows => rows.map(row => row.id === task.id ? {...row,...patch(row)} : row)); return; }
+    const ref = doc(db,'tasks',task.id);
+    await runTransaction(db,async transaction => {
+      const snapshot = await transaction.get(ref);
+      if (!snapshot.exists()) throw new Error('Công việc không còn tồn tại.');
+      transaction.update(ref,{...patch(snapshot.data()),updatedAt:serverTimestamp()});
+    });
   }
+  const toggleTask = task => changeCompletion(task,taskCompletionPatch);
+  const toggleStep = (task,stepId) => changeCompletion(task,current => stepCompletionPatch(current,stepId));
   async function logout() {
     try { if (demo) { setDemo(false); setEvents([]); setTasks([]); setExternal([]); setOwnReady(false); setSelectedOwner('me'); setCompare(false); setSelected(null); setReadEvent(null); setClassOpen(false); setError(''); } else await signOut(auth); }
     catch (err) { setError(firebaseError(err)); }
@@ -155,8 +162,8 @@ export default function App() {
         {!viewingShared && <div className="api-ribbon"><div><Users size={15}/><b>Lịch nhóm API</b><span>Hiện cùng lịch của bạn</span></div><div><label className="switch"><input aria-label="Hiện lịch nhóm" type="checkbox" checked={showExternal} onChange={e => setShowExternal(e.target.checked)}/><i/></label><button className="text-btn" disabled={apiLoading} onClick={loadExternal}><RefreshCw size={14} className={apiLoading ? 'spin' : ''}/>{apiLoading ? 'Đang tải…' : external.length ? 'Làm mới' : 'Tải lịch nhóm'}</button></div></div>}
       </section>
       {viewingShared && compare && <SharedAvailability days={days} mine={ownOccurrences.rows} theirs={peerOccurrences.rows} ready={ownReady && peerPlanner.ready && !peerPlanner.error && !ownOccurrences.error && !peerOccurrences.error} peerName={peerName}/>}
-      <TaskTimeline key={viewOwner} days={days} tasks={displayedTasks} onSelect={chooseTask} readOnly={viewingShared}/>
-      <div className="planning-workbench"><TaskList key={viewOwner} tasks={displayedTasks} onSelect={chooseTask} ownerName={peerName} onToggle={viewingShared ? null : toggleTask} onDelete={viewingShared ? null : task => removeRecord('tasks',task.id)} onAdd={viewingShared ? null : () => newTask({ start: dateKey(new Date()), end: dateKey(new Date()) })}/><PlanningSummary tasks={displayedTasks} events={baseEvents} calendarRange={range} onSelect={chooseTask} ownerName={peerName} onShare={viewingShared ? null : () => setShareOpen(true)} onClass={viewingShared ? null : () => setClassOpen(open => !open)} classOpen={classOpen}/></div>
+      <TaskTimeline key={viewOwner} days={days} tasks={displayedTasks} onSelect={chooseTask} readOnly={viewingShared} onToggle={viewingShared ? null : toggleTask} onStepToggle={viewingShared ? null : toggleStep}/>
+      <div className="planning-workbench"><TaskList key={viewOwner} tasks={displayedTasks} onSelect={chooseTask} ownerName={peerName} onToggle={viewingShared ? null : toggleTask} onStepToggle={viewingShared ? null : toggleStep} onDelete={viewingShared ? null : task => removeRecord('tasks',task.id)} onAdd={viewingShared ? null : () => newTask({ start: dateKey(new Date()), end: dateKey(new Date()) })}/><PlanningSummary tasks={displayedTasks} events={baseEvents} calendarRange={range} onSelect={chooseTask} ownerName={peerName} onShare={viewingShared ? null : () => setShareOpen(true)} onClass={viewingShared ? null : () => setClassOpen(open => !open)} classOpen={classOpen}/></div>
       {!viewingShared && classOpen && <Suspense fallback={<p role="status">Đang mở lịch lớp…</p>}><ClassBoard key={demo ? 'demo-class' : user.uid} taskState={classTaskState} days={days} onClose={() => setClassOpen(false)}/></Suspense>}
     </main>
     {selectedTask && <TaskDrawer key={`${viewOwner}:${selectedTask.id || 'new'}`} item={selectedTask} readOnly={viewingShared} ownerName={peerName} onClose={() => setSelected(null)} onSave={(data, id) => saveRecord('tasks', data, id)} onDelete={id => removeRecord('tasks', id)}/>}
