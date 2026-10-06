@@ -15,6 +15,7 @@ import useSharedPlanner from './lib/useSharedPlanner';
 import { expandEvents } from './lib/recurrence';
 import { taskCompletionPatch, stepCompletionPatch } from './lib/taskActions';
 import useClassTaskStates from './lib/useClassTaskStates';
+import PlannerMascot from './components/PlannerMascot';
 import { weekDays, fmtShort, dateKey } from './lib/date';
 import { demoEvents, demoTasks, demoUser } from './lib/mock';
 import { auth, db, onAuthStateChanged, signOut, collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, doc, serverTimestamp, firebaseError, runTransaction } from './lib/firebase';
@@ -138,7 +139,7 @@ export default function App() {
   const scopeError = (viewingShared ? peerPlanner.error || peerOccurrences.error : grantError || ownOccurrences.error) || (viewingShared && compare ? ownOccurrences.error : '');
   if (authLoading) return <div className="loading-screen" role="status">Đang mở Planner…</div>;
   if (!activeUser) return <Login onDemo={enterDemo}/>;
-  return <div className="app-shell">
+  return <div className="app-shell"><PlannerMascot active={!!activeUser} session={demo ? 'demo' : user?.uid}/>
     <header className="topbar"><div className="logo"><span>p</span><b>Planner</b></div><div className="top-actions">
       {!viewingShared && <><button className="soft-btn" onClick={() => setEventEditor({})}><CalendarPlus size={16}/>Thêm lịch</button><button className="soft-btn" onClick={() => setShareOpen(true)}><Share2 size={16}/>Chia sẻ lịch & việc</button></>}
       <div className="profile"><Avatar user={activeUser}/><div><b>{activeUser.displayName}</b><small>{activeUser.email}</small></div><button className="icon-btn" aria-label="Đăng xuất" onClick={logout}><LogOut size={18}/></button></div>
@@ -166,7 +167,7 @@ export default function App() {
       <div className="planning-workbench"><TaskList days={days} key={viewOwner} tasks={displayedTasks} onSelect={chooseTask} ownerName={peerName} onToggle={viewingShared ? null : toggleTask} onStepToggle={viewingShared ? null : toggleStep} onDelete={viewingShared ? null : task => removeRecord('tasks',task.id)} onAdd={viewingShared ? null : () => newTask({ start: dateKey(new Date()), end: dateKey(new Date()) })}/><PlanningSummary tasks={displayedTasks} events={baseEvents} calendarRange={range} onSelect={chooseTask} ownerName={peerName} onShare={viewingShared ? null : () => setShareOpen(true)} onClass={viewingShared ? null : () => setClassOpen(open => !open)} classOpen={classOpen}/></div>
       {!viewingShared && classOpen && <Suspense fallback={<p role="status">Đang mở lịch lớp…</p>}><ClassBoard key={demo ? 'demo-class' : user.uid} taskState={classTaskState} days={days} onClose={() => setClassOpen(false)}/></Suspense>}
     </main>
-    {selectedTask && <TaskDrawer key={`${viewOwner}:${selectedTask.id || 'new'}`} item={selectedTask} readOnly={viewingShared} ownerName={peerName} onClose={() => setSelected(null)} onSave={(data, id) => saveRecord('tasks', data, id)} onDelete={id => removeRecord('tasks', id)}/>}
+    {selectedTask && <TaskDrawer key={`${viewOwner}:${selectedTask.id || 'new'}`} item={selectedTask} readOnly={viewingShared} ownerName={peerName} onClose={() => setSelected(current => current?.id === selectedTask.id && current?.viewerOwner === viewOwner ? null : current)} onSave={(data, id) => saveRecord('tasks', data, id)} onDelete={id => removeRecord('tasks', id)}/>}
     {!viewingShared && eventEditor && <AddEventModal key={eventEditor.id || 'new'} item={eventEditor.id ? eventEditor : null} initialDate={eventEditor.initialDate || dateKey(days[0])} onClose={() => setEventEditor(null)} onAdd={(data, id) => saveRecord('events', data, id)} onDelete={id => removeRecord('events', id)}/>}
     {selectedEvent && <EventDetails item={selectedEvent} onClose={() => setReadEvent(null)}/>}
     {!viewingShared && shareOpen && <ShareModal user={user} demo={demo} onClose={() => setShareOpen(false)}/>}

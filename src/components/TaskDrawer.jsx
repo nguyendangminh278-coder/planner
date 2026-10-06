@@ -4,7 +4,8 @@ import { dateKey } from '../lib/date';
 import { firebaseError } from '../lib/firebase';
 import ColorPicker from './ColorPicker';
 import { plannerColors } from '../lib/theme';
-import { CompletionButton } from './TaskActions';
+import { CompletionButton, TaskDeleteDialog } from './TaskActions';
+import {usePlannerMascot} from './PlannerMascot';
 import { isTaskComplete, taskCompletionPatch, stepCompletionPatch, stepsProgress, clearCompletionBackup } from '../lib/taskActions';
 import { taskForm, taskScheduleData, scheduleDefaults, taskRangeLabel } from '../lib/taskSchedule';
 import TaskScheduleFields from './TaskScheduleFields';
@@ -13,6 +14,7 @@ export default function TaskDrawer({ item, onClose, onSave, onDelete, readOnly=f
   const today = dateKey(new Date());
   const [form, setForm] = useState(() => taskForm(item,today));
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
+  const [deleteOpen,setDeleteOpen]=useState(false),mascot=usePlannerMascot();
   const change = (key, value) => setForm(f => ({ ...f, [key]: key === 'steps' ? value.map(clearCompletionBackup) : value, ...(key === 'steps' ? {progress:value.length ? stepsProgress(value) : f.progress, previousProgress:null} : {}) }));
   const changeStep = (id, key, value) => setForm(f => {
     const steps = f.steps.map(step => { const s = key === 'progress' ? clearCompletionBackup(step) : step; return s.id === id ? {...s,[key]:key === 'progress' ? Number(value) : value,...(key === 'progress' ? {previousProgress:null} : {})} : s; });
@@ -26,9 +28,8 @@ export default function TaskDrawer({ item, onClose, onSave, onDelete, readOnly=f
     try { await onSave(data, item?.id); onClose(); } catch (err) { setError(firebaseError(err)); } finally { setBusy(false); }
   }
   async function remove() {
-    if (!window.confirm('Xóa công việc và tất cả các bước bên trong?')) return;
     setBusy(true);
-    try { await onDelete(item.id); onClose(); } catch (err) { setError(firebaseError(err)); } finally { setBusy(false); }
+    try { await onDelete(item.id); onClose(); return true; } catch (err) { setError(firebaseError(err)); return false; } finally { setBusy(false); }
   }
   if (readOnly) return <div className="drawer-backdrop" onClick={onClose}><aside className="drawer shared-task-detail" role="dialog" aria-modal="true" aria-label="Chi tiết công việc chỉ xem" onClick={e => e.stopPropagation()}>
     <button className="icon-btn close" aria-label="Đóng" onClick={onClose}><X size={20}/></button><span className="eyebrow">CÔNG VIỆC CỦA {ownerName} · CHỈ XEM</span><h2>{item.title}</h2>
@@ -60,7 +61,7 @@ export default function TaskDrawer({ item, onClose, onSave, onDelete, readOnly=f
       <button type="button" className="soft-btn" disabled={busy || form.steps.length >= 30} onClick={() => change('steps', [...form.steps, scheduleDefaults({ id: crypto.randomUUID(), title: '', start: form.start, end: form.end, allDay:form.allDay, startTime:form.startTime, endTime:form.endTime, progress: 0, details: '', color: plannerColors[(form.steps.length+1)%plannerColors.length].value },form.timeZone)])}><Plus size={16}/>Thêm bước</button>
       {error && <p className="error-message" role="alert">{error}</p>}
       <p className="step-save-note">Các dấu tích trong bảng này được lưu khi bấm “Lưu cập nhật”.</p><button className="primary-btn" disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu cập nhật'}</button>
-      {item?.id && <button type="button" className="text-btn danger" onClick={remove} disabled={busy}>Xóa công việc</button>}
+      {item?.id && <button type="button" className="text-btn danger" onClick={()=>{mascot?.prepareDeleteForId(item.id);setError('');setDeleteOpen(true);}} disabled={busy || mascot?.busy}>Xóa công việc</button>}
     </form>
-  </aside></div>;
+  </aside>{deleteOpen && <TaskDeleteDialog title={form.title} busy={busy} error={error} onCancel={()=>setDeleteOpen(false)} onConfirm={remove}/>}</div>;
 }

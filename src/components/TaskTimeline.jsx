@@ -38,7 +38,7 @@ export default function TaskTimeline({days, tasks, onSelect, readOnly=false, onT
   async function act(task, action) {
     if (busy) return;
     setBusy(task.id); setError('');
-    try { await action(); } catch (err) { setError(firebaseError(err)); } finally { setBusy(null); }
+    try { await action(); return true; } catch (err) { setError(firebaseError(err)); return false; } finally { setBusy(null); }
   }
   return <section className="timeline-section" style={{'--week-count':days.length}}>
     <div className="section-head"><div><span className="eyebrow">3-LEVEL TODO</span><h2>Việc đang chạy</h2></div><div className="calendar-view-switch" role="group" aria-label="Kiểu xem việc đang chạy"><button type="button" className={view==='timeline'?'active':''} aria-pressed={view==='timeline'} onClick={()=>setView('timeline')}><List size={15}/>Timeline</button><button type="button" className={view==='grid'?'active':''} aria-pressed={view==='grid'} onClick={()=>setView('grid')}><Grid2X2 size={15}/>Lưới giờ</button></div></div>
@@ -46,7 +46,7 @@ export default function TaskTimeline({days, tasks, onSelect, readOnly=false, onT
     <div className="timeline-head"><span>Công việc</span>{days.map(d=><span key={dateKey(d)}>{d.toLocaleDateString('vi-VN',{weekday:'short'})}<b>{d.getDate()}</b></span>)}</div>
     <BoundedTaskList className="timeline-body" label="Danh sách việc đang chạy" resetKey={null}>
       {error && <p className="error-message" role="alert">{error}</p>}
-      {tasks.map(task => <div data-task-card className={`task-group ${task.progress >= 100 ? 'is-completed' : ''}`} key={task.id}>
+      {tasks.map(task => <div data-task-card data-mascot-task={task.id} className={`task-group ${task.progress >= 100 ? 'is-completed' : ''}`} key={task.id}>
         {(open[task.id] ?? true) && <TaskLinks task={task} days={days}/>}
         <div className="timeline-row parent-row">
           <div className="task-label"><button className="icon-btn" aria-label={`Ẩn/hiện bước: ${task.title}`} onClick={()=>setOpen(o=>({...o,[task.id]:!(o[task.id] ?? true)}))}>{(open[task.id] ?? true)?<ChevronDown size={16}/>:<ChevronRight size={16}/>}</button><CompletionButton title={task.title} completed={task.progress >= 100} busy={!!busy} onToggle={onToggle ? () => act(task,() => onToggle(task)) : null}/><button className="text-btn" onClick={()=>onSelect(task)}><b>{task.title}</b><small className="timeline-schedule">{taskTimeLabel(task)}</small></button><span>{task.progress}%</span></div>

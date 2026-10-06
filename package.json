@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test:rules": "firebase emulators:exec --only firestore --project demo-planner \"node --test tests/firestore.test.mjs\"",
     "start": "vite --host localhost --port 5173 --open",
-    "test": "node --test tests/classFeed.test.mjs tests/mood.test.mjs tests/firebaseMessages.test.mjs tests/availability.test.mjs tests/recurrence.test.mjs tests/taskActions.test.mjs tests/taskSchedule.test.mjs tests/taskGrid.test.mjs",
+    "test": "node --test tests/classFeed.test.mjs tests/mood.test.mjs tests/firebaseMessages.test.mjs tests/availability.test.mjs tests/recurrence.test.mjs tests/taskActions.test.mjs tests/taskSchedule.test.mjs tests/taskGrid.test.mjs tests/mascotAction.test.mjs",
     "build:pages": "vite build --base=/planner/ --outDir=dist-pages",
     "publish:pages": "npm run build:pages && gh-pages -b codex/pages -d dist-pages --nojekyll --remove \"{**/*,.env.example,.firebaserc,.gitattributes,.gitignore}\"",
     "preview:pages": "vite preview --outDir dist-pages --base=/planner/ --host 127.0.0.1 --port 4174 --strictPort"

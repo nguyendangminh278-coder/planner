@@ -58,6 +58,14 @@ Lịch lặp xuất hiện trong cả hai kiểu xem và planner được chia s
 
 ## Hoàn thành và xóa công việc
 
+### Mascot chibi
+
+Mascot ở góc dưới bên phải dùng bộ ảnh render 3D nền trong suốt từ hình nhân vật người dùng cung cấp. Bình thường nhân vật ngồi chơi với micro và chuyển động nhẹ. Khi tích hoàn thành công việc/bước, nhân vật chạy tới tên việc, dùng bút gạch một đường xám rồi lưu trạng thái. Khi xác nhận xóa, nhân vật kéo cả thẻ việc ra khỏi màn hình rồi thực hiện xóa; nếu thao tác dữ liệu thất bại, thẻ việc hiện lại. Áp dụng cho danh sách, timeline, lưới giờ và task lớp (task lớp vẫn chỉ thay đổi trong Planner của tài khoản hiện tại).
+
+Nút **Ẩn mascot / Hiện mascot** ghi nhớ lựa chọn trên trình duyệt. Khi hệ điều hành yêu cầu giảm chuyển động hoặc ảnh chưa tải được, thao tác dữ liệu chạy ngay. Hoạt ảnh bị gián đoạn không làm mất thao tác, không ghi dữ liệu hai lần; các bản sao kéo đi không nhận chuột/phím và được dọn khi đổi tài khoản/đăng xuất. Mascot không chặn đăng nhập hay tải dữ liệu. Đây là sprite render 3D kết hợp hoạt ảnh web, không phải mô hình 3D xoay tương tác.
+
+Ảnh: `src/assets/mascot/pose-atlas.png`. Prompt và nguồn kỹ thuật: `src/assets/mascot/PROMPT.md`. `tests/mascotAction.test.mjs` kiểm tra commit một lần, kết quả lỗi/khôi phục, hủy hoạt ảnh và vị trí bút trong viewport.
+
 **Việc đang chạy** có nút **Timeline / Lưới giờ**; **Việc cần làm** có **Danh sách / Lưới giờ**, áp dụng cùng bộ lọc Hôm nay/Sắp tới/Đã hoàn thành. Lưới giữ màu từng ngày như lịch tuần, mặc định cuộn tới 08:00, hỗ trợ Chủ nhật khi bật cột đó. Chọn **Công việc**, **Các bước** hoặc **Công việc & các bước** trong lưới. Mục cả ngày ở hàng trên; mục có giờ nằm đúng ngày/giờ của người xem, được chia khi qua đêm. Các mục trùng giờ có cột riêng; có thể mở chi tiết và tích hoàn thành ngay trong lưới.
 
 Danh sách và timeline có vùng cuộn riêng, tối đa năm công việc trong khung và cao tối đa 520px. Tất cả công việc vẫn có trong danh sách; cuộn lên/xuống để xem tiếp, dùng Tab rồi phím mũi tên/Page Up/Page Down để cuộn bằng bàn phím. Mở các bước vẫn được giữ trong vùng cuộn. Lưới giờ có chiều cao giới hạn và cuộn theo giờ; danh sách cả ngày cũng cuộn khi dài.
