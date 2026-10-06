@@ -7,6 +7,12 @@ const MascotContext=createContext(null);
 const home=()=>({x:Math.max(4,document.documentElement.clientWidth-124),y:Math.max(4,document.documentElement.clientHeight-126)});
 const frame=()=>new Promise(resolve=>{const timer=setTimeout(resolve,120);requestAnimationFrame(()=>{clearTimeout(timer);resolve();});});
 const initialPreference=()=>{try{return localStorage.getItem('planner.mascot.enabled')!=='false';}catch{return true;}};
+const titleRect=element=>{
+  let rect=element.getBoundingClientRect();
+  const range=document.createRange();range.selectNodeContents(element);const text=range.getClientRects()[0];
+  if(text?.width){const left=Math.max(rect.left,text.left),right=Math.min(rect.right,text.right);rect={left,right,width:Math.max(1,right-left),top:text.top,height:text.height};}
+  return rect;
+};
 export const usePlannerMascot=()=>useContext(MascotContext);
 
 export function mascotTarget(button,whole=false) {
@@ -47,23 +53,14 @@ export function MascotProvider({children}) {
     if(!available.current || !preference.current || !assetReady.current || reduced.current || working.current || !target?.row?.isConnected) return commit();
     working.current=true;setBusy(true);setMessage(kind==='delete'?'Mascot đang kéo công việc…':'Mascot đang đánh dấu hoàn thành…');
     let ghost=null,original=target.row,oldVisibility=original.style.visibility;
-    const interrupt=()=>cancelVisual();
-    const stopWatching=()=>{window.removeEventListener('wheel',interrupt,true);window.removeEventListener('touchmove',interrupt,true);window.removeEventListener('resize',interrupt);};
     const clean=()=>{ghost?.remove();ghost=null;if(original)original.style.visibility=oldVisibility;setVisual(old=>({...old,stroke:null}));};
     cleanupVisual.current=clean;
     try {
       return await mascotMutation({
         play:async()=>{
           target.title.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'}); await frame();
-          // User scrolling may cancel the visual; focus/scrollIntoView must not cancel it.
-          window.addEventListener('wheel',interrupt,{capture:true,passive:true});window.addEventListener('touchmove',interrupt,{capture:true,passive:true});window.addEventListener('resize',interrupt);
-          let rect=target.title.getBoundingClientRect();
-          if(kind!=='delete'){
-            const range=document.createRange();range.selectNodeContents(target.title);
-            const textRect=range.getClientRects()[0];
-            if(textRect?.width){const left=Math.max(rect.left,textRect.left),right=Math.min(rect.right,textRect.right);rect={left,right,width:Math.max(1,right-left),top:textRect.top,height:textRect.height};}
-          } else rect=original.getBoundingClientRect();
-          const start=kind==='delete' ? {x:Math.min(window.innerWidth-110,rect.right-20),y:Math.max(8,Math.min(window.innerHeight-110,rect.top+Math.min(rect.height/2,54)-47))} : mascotAnchor(rect,window.innerWidth,window.innerHeight);
+          let rect=kind==='delete' ? original.getBoundingClientRect() : titleRect(target.title);
+          let start=kind==='delete' ? {x:Math.min(window.innerWidth-110,rect.right-20),y:Math.max(8,Math.min(window.innerHeight-110,rect.top+Math.min(rect.height/2,54)-47))} : mascotAnchor(rect,window.innerWidth,window.innerHeight);
           await move(start,'run',Math.max(450,Math.min(850,Math.hypot(start.x-(position.current||home()).x,start.y-(position.current||home()).y))));
           if(kind==='delete'){
             if(!original.isConnected)throw new Error('Target removed');
@@ -78,6 +75,10 @@ export function MascotProvider({children}) {
             await Promise.all([animate(ghost,[{transform:'translateX(0) rotate(0deg)',opacity:1},{transform:`translateX(${distance}px) rotate(4deg)`,opacity:0}],850),move({x:start.x+distance,y:start.y},'drag',850)]);
           }else{
             if(!original.isConnected)throw new Error('Target removed');
+            rect=titleRect(target.title);
+            const updated=mascotAnchor(rect,window.innerWidth,window.innerHeight);
+            if(Math.hypot(updated.x-start.x,updated.y-start.y)>2)await move(updated,'run',140);
+            start=updated;
             setVisual(old=>({...old,pose:'write',flip:start.reverse,stroke:{x:start.reverse?rect.right:rect.left,y:rect.top+rect.height*.5,width:start.reverse?-rect.width:rect.width}}));await frame();
             const to={x:Math.max(4,Math.min(window.innerWidth-108,start.x+(start.reverse?-rect.width:rect.width))),y:start.y};
             await Promise.all([animate(line.current,[{strokeDashoffset:1},{strokeDashoffset:0}],520),move(to,'write',520,start.reverse)]);
@@ -90,7 +91,7 @@ export function MascotProvider({children}) {
         }
       });
     }finally{
-      stopWatching();clean();cleanupVisual.current=null;for(const animation of animations.current)animation.cancel();animations.current.clear();
+      clean();cleanupVisual.current=null;for(const animation of animations.current)animation.cancel();animations.current.clear();
       if(available.current&&preference.current&&!reduced.current){try{await move(home(),'run',520);}catch{}}
       position.current=home();setVisual({pose:'idle',point:null,flip:false,stroke:null});for(const animation of animations.current)animation.cancel();animations.current.clear();working.current=false;setBusy(false);
     }
