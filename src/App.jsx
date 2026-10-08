@@ -16,7 +16,7 @@ import { expandEvents } from './lib/recurrence';
 import { taskCompletionPatch, stepCompletionPatch } from './lib/taskActions';
 import useClassTaskStates from './lib/useClassTaskStates';
 import PlannerMascot from './components/PlannerMascot';
-import {isAndroid} from './lib/android';
+import {isAndroid,PlannerAndroid} from './lib/android';
 import useAndroidAgenda from './lib/useAndroidAgenda';
 import AndroidSettings from './components/AndroidSettings';
 import { weekDays, fmtShort, dateKey } from './lib/date';
@@ -51,14 +51,21 @@ export default function App() {
   const peerOccurrences = useMemo(() => expandSafely(peerPlanner.events,range), [peerPlanner.events,range]);
   const openAndroidRecord=useCallback(key=>{
     setSelectedOwner('me');setCompare(false);
+    if(key.startsWith('calendar:')){const day=key==='calendar:today'?new Date():new Date(key.slice(9)+'T12:00:00');if(Number.isFinite(day.getTime())){setWeek(day);setCalendarView('grid');if(day.getDay()===0)setIncludeSunday(true);setSelected(null);setEventEditor(null);}return;}
+    if(key==='tasks:today'){setWeek(new Date());setSelected(null);setEventEditor(null);return;}
     if(key.startsWith('events:')){const record=events.find(row=>row.id===key.slice(7));if(record)setEventEditor(record);}
     if(key.startsWith('tasks:')||key.startsWith('steps:')){const id=key.slice(6).split('/')[0],record=tasks.find(row=>row.id===id);if(record)setSelected({...record,viewerOwner:'me'});}
   },[events,tasks]);
   const androidAgenda=useAndroidAgenda({user,demo,authLoading,ready:ownReady,events,tasks,onOpen:openAndroidRecord});
 
-  useEffect(() => onAuthStateChanged(auth, next => {
+  useEffect(() => {
+    const timer=isAndroid?setTimeout(()=>{setAuthLoading(false);setError('Chưa khôi phục được đăng nhập. Bạn có thể đăng nhập Google lại; dữ liệu widget vẫn được giữ.');},15000):null;
+    const stop=onAuthStateChanged(auth, next => {
+    clearTimeout(timer);
     setUser(next); setDemo(false); setEvents([]); setTasks([]); setExternal([]); setOwnReady(false); setSelectedOwner('me'); setCompare(false); setClassOpen(false); setError(''); setSelected(null); setEventEditor(null); setReadEvent(null); setShareOpen(false); setAuthLoading(false);
-  }, err => { setError(firebaseError(err)); setAuthLoading(false); }), []);
+  }, err => { clearTimeout(timer);setError(firebaseError(err)); setAuthLoading(false); });
+    return()=>{clearTimeout(timer);stop();};
+  }, []);
 
   useEffect(() => {
     if (!user || demo) return;
@@ -117,7 +124,8 @@ export default function App() {
   const toggleTask = task => changeCompletion(task,taskCompletionPatch);
   const toggleStep = (task,stepId) => changeCompletion(task,current => stepCompletionPatch(current,stepId));
   async function logout() {
-    try { if (demo) { setDemo(false); setEvents([]); setTasks([]); setExternal([]); setOwnReady(false); setSelectedOwner('me'); setCompare(false); setSelected(null); setReadEvent(null); setClassOpen(false); setError(''); } else await signOut(auth); }
+
+    try { if(isAndroid)await PlannerAndroid.clearSession(); if (demo) { setDemo(false); setEvents([]); setTasks([]); setExternal([]); setOwnReady(false); setSelectedOwner('me'); setCompare(false); setSelected(null); setReadEvent(null); setClassOpen(false); setError(''); } else await signOut(auth); }
     catch (err) { setError(firebaseError(err)); }
   }
   async function loadExternal() {
@@ -148,7 +156,7 @@ export default function App() {
   const selectedEvent = readEvent?.viewerOwner === viewOwner ? visibleEvents.find(event => event.id === readEvent.id) : null;
   const scopeError = (viewingShared ? peerPlanner.error || peerOccurrences.error : grantError || ownOccurrences.error) || (viewingShared && compare ? ownOccurrences.error : '');
   if (authLoading) return <div className="loading-screen" role="status">Đang mở Planner…</div>;
-  if (!activeUser) return <Login onDemo={enterDemo}/>;
+  if (!activeUser) return <Login onDemo={enterDemo} startupError={error}/>;
   return <div className="app-shell"><PlannerMascot active={!!activeUser} session={demo ? 'demo' : user?.uid}/>
     <header className="topbar"><div className="logo"><span>p</span><b>Planner</b></div><div className="top-actions">
       {!viewingShared && <><button className="soft-btn" onClick={() => setEventEditor({})}><CalendarPlus size={16}/>Thêm lịch</button><button className="soft-btn" onClick={() => setShareOpen(true)}><Share2 size={16}/>Chia sẻ lịch & việc</button></>}
@@ -185,3 +193,4 @@ export default function App() {
     {isAndroid&&androidOpen&&<AndroidSettings events={events} tasks={tasks} onClose={()=>setAndroidOpen(false)} onUpdate={androidAgenda.refresh}/>}
   </div>;
 }
+

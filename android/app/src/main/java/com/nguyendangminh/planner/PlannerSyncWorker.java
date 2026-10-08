@@ -24,7 +24,7 @@ public class PlannerSyncWorker extends Worker {
             Object value=map.get(field);
             if(field.equals("steps")&&value instanceof List<?> list){JSONArray steps=new JSONArray();for(Object item:list)if(item instanceof Map<?,?> step)steps.put(record((Map<String,Object>)step));result.put(field,steps);}
             else result.put(field,JSONObject.wrap(value));
-        }return result;
+        }if(map.get("details") instanceof String details)result.put("summary",WidgetData.summary(details));return result;
     }
     @NonNull @Override public Result doWork(){
         Context c=getApplicationContext();String owner=PlannerStore.owner(c);if(owner.isEmpty()||owner.equals("demo-user"))return Result.success();

@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="10dp" android:background="@drawable/planner_widget_background">
-    <TextView android:id="@+id/widget_heading" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Planner · Hôm nay" android:textColor="#155e75" android:textSize="15sp" android:textStyle="bold" android:paddingBottom="4dp" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="40dp" android:orientation="horizontal" android:gravity="center_vertical">
+        <Button android:id="@+id/widget_previous" android:layout_width="40dp" android:layout_height="40dp" android:background="@android:color/transparent" android:text="‹" android:textSize="24sp" android:textColor="#155e75" android:contentDescription="Ngày trước" />
+        <TextView android:id="@+id/widget_heading" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Lịch · 3 ngày" android:textColor="#155e75" android:textSize="14sp" android:textStyle="bold" android:gravity="center" />
+        <Button android:id="@+id/widget_next" android:layout_width="40dp" android:layout_height="40dp" android:background="@android:color/transparent" android:text="›" android:textSize="24sp" android:textColor="#155e75" android:contentDescription="Ngày tiếp theo" />
+    </LinearLayout>
+    <Button android:id="@+id/widget_today" android:layout_width="match_parent" android:layout_height="32dp" android:background="@android:color/transparent" android:text="Về hôm nay" android:textSize="10sp" android:textColor="#0891b2" />
     <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
         <ListView android:id="@+id/widget_list" android:layout_width="match_parent" android:layout_height="match_parent" android:divider="@android:color/transparent" android:dividerHeight="2dp" />
         <TextView android:id="@+id/widget_empty" android:layout_width="match_parent" android:layout_height="match_parent" android:text="Mở Planner để đăng nhập" android:gravity="center" android:textColor="#64748b" android:textSize="12sp" />

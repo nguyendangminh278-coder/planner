@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAnalytics, isSupported } from 'firebase/analytics';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, initializeAuth, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import {Capacitor} from '@capacitor/core';
 import { getFirestore, collection, collectionGroup, addDoc, setDoc, updateDoc, doc, deleteDoc, query, where, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore';
 
 // Firebase web configuration is public. Data access is enforced by firestore.rules.
@@ -15,7 +16,8 @@ const config = {
 };
 
 export const app = getApps().length ? getApp() : initializeApp(config);
-export const auth = getAuth(app);
+// Native WebViews should not wait indefinitely for an IndexedDB persistence probe.
+export const auth = Capacitor.isNativePlatform()?initializeAuth(app,{persistence:browserLocalPersistence}):getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });

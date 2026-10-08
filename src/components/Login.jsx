@@ -4,7 +4,7 @@ import { auth, googleProvider, signInWithPopup, firebaseError } from '../lib/fir
 import { authSetupErrors } from '../lib/firebaseMessages';
 import {googleLogin} from '../lib/android';
 
-export default function Login({ onDemo }) {
+export default function Login({ onDemo,startupError='' }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [errorCode, setErrorCode] = useState('');
@@ -22,6 +22,7 @@ export default function Login({ onDemo }) {
     <p>Lịch tuần + todo phân cấp, đủ nhẹ để nhìn nhanh và đủ sâu để quản lý cả quy trình.</p>
     <div className="login-points"><span><CalendarDays size={18}/> Lịch Thứ 2 → Thứ 7</span><span><CheckCircle2 size={18}/> Công việc 3 tầng</span><span><Users size={18}/> Xem lịch chia sẻ & lịch nhóm</span></div>
     <button className="google-btn" onClick={login} disabled={busy}><span className="google-g">G</span>{busy ? 'Đang đăng nhập…' : 'Tiếp tục với Google'}</button>
+    {!error&&startupError&&<p className="error-message" role="alert">{startupError}</p>}
     {error && <div className="login-error" role="alert"><p className="error-message">{error}</p>{errorCode && <code>{errorCode}</code>}{authSetupErrors.has(errorCode) && <><a href="https://console.firebase.google.com/project/calendar-f3d1b/authentication/providers" target="_blank" rel="noopener noreferrer">Mở cấu hình đăng nhập Firebase</a><p>Bật Google, chọn email hỗ trợ và lưu. Trong Settings → Authorized domains, thêm <b>localhost</b>, <b>127.0.0.1</b> hoặc tên miền website đang dùng.</p></>}</div>}
     <button className="text-btn demo-btn" onClick={onDemo} disabled={busy}>Khám phá bản demo</button>
     <small>Đăng nhập để lưu lịch và công việc vào tài khoản của bạn.</small>

@@ -1,0 +1,1 @@
+<ImageView xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/widget_grid_image" android:layout_width="match_parent" android:layout_height="wrap_content" android:adjustViewBounds="true" android:scaleType="fitCenter" android:contentDescription="Lịch hôm nay theo lưới giờ" />

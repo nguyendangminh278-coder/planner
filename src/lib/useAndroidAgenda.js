@@ -16,7 +16,9 @@ export default function useAndroidAgenda({user,demo,authLoading,ready,events,tas
   useEffect(()=>{
     if(!isAndroid || authLoading)return;
     let active=true;
-    const operation=!user&&!demo ? ()=>PlannerAndroid.clearSession() : ready ? ()=>PlannerAndroid.syncAgenda({ownerId:demo?'demo-user':user.uid,demo,...mobileRecords(events,tasks)}) : null;
+    // A cold web session can be missing while native auth/widgets are still valid.
+    // Clear native data only on explicit logout, not while the web SDK restores itself.
+    const operation=(user||demo)&&ready ? ()=>PlannerAndroid.syncAgenda({ownerId:demo?'demo-user':user.uid,demo,...mobileRecords(events,tasks)}) : null;
     if(operation)enqueue(operation).then(()=>{if(active)setError('');},()=>{if(active)setError('Chưa cập nhật được widget/nhắc việc. Mở lại app để thử đồng bộ.');});
     return()=>{active=false;};
   },[user?.uid,demo,authLoading,ready,events,tasks,revision]);

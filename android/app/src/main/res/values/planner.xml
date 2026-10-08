@@ -1,1 +1,1 @@
-<resources><string name="widget_description">Lịch và công việc/bước hôm nay, cuộn để xem và chạm để mở Planner</string></resources>
+<resources><string name="tasks_widget_description">Công việc và nội dung ngắn, tick hoàn thành ngay trên widget</string><string name="calendar_widget_description">Lịch 3 ngày, hôm nay ở giữa, lưới giờ và nút chuyển ngày</string></resources>
