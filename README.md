@@ -210,3 +210,6 @@ npm audit --omit=dev
 Các phụ thuộc frontend có kết quả audit không phát hiện lỗ hổng ở lần kiểm tra hiện tại. Firebase CLI là công cụ dev và vẫn có cảnh báo từ một số phụ thuộc bắc cầu; không dùng `npm audit fix --force` để hạ SDK/công cụ mà chưa kiểm tra tương thích.
 
 Website đang chạy trên GitHub Pages: https://nguyendangminh278-coder.github.io/planner/. Repo mã nguồn public: https://github.com/nguyendangminh278-coder/planner. Có thể tiếp tục chạy local bằng `start-planner.cmd` hoặc `npm run start`.
+# Android
+
+Planner includes a Capacitor Android project, two native today widgets and per-device reminders. See [Android build/setup/install instructions](docs/ANDROID.md). Run `npm run android:sync` to refresh bundled web assets, then `scripts/build-android.ps1` with JDK 21 and Android SDK 36. Google sign-in needs the Android Firebase registration and matching APK SHA-1. The build script produces an installable debug APK after native Gradle checks pass.

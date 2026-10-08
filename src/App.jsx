@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState, useCallback } from 'react';
 import { CalendarDays, CalendarPlus, ChevronLeft, ChevronRight, LogOut, Users, RefreshCw, Share2, Plus, Droplets, List, Grid2X2, Layers } from 'lucide-react';
 import Login from './components/Login';
 import CalendarWeek from './components/CalendarWeek';
@@ -16,6 +16,9 @@ import { expandEvents } from './lib/recurrence';
 import { taskCompletionPatch, stepCompletionPatch } from './lib/taskActions';
 import useClassTaskStates from './lib/useClassTaskStates';
 import PlannerMascot from './components/PlannerMascot';
+import {isAndroid} from './lib/android';
+import useAndroidAgenda from './lib/useAndroidAgenda';
+import AndroidSettings from './components/AndroidSettings';
 import { weekDays, fmtShort, dateKey } from './lib/date';
 import { demoEvents, demoTasks, demoUser } from './lib/mock';
 import { auth, db, onAuthStateChanged, signOut, collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, doc, serverTimestamp, firebaseError, runTransaction } from './lib/firebase';
@@ -29,6 +32,7 @@ const expandSafely = (rows, range) => { try { return { rows: expandEvents(rows,r
 export default function App() {
   const [user, setUser] = useState(null), [authLoading, setAuthLoading] = useState(true), [demo, setDemo] = useState(false);
   const [week, setWeek] = useState(new Date());
+  const [androidOpen,setAndroidOpen]=useState(false);
   const [events, setEvents] = useState([]), [tasks, setTasks] = useState([]), [ownReady, setOwnReady] = useState(false);
   const [external, setExternal] = useState([]), [showExternal, setShowExternal] = useState(true);
   const [classOpen, setClassOpen] = useState(false), [calendarView, setCalendarView] = useState('agenda');
@@ -45,6 +49,12 @@ export default function App() {
   const classTaskState = useClassTaskStates(user,demo,classOpen && !viewingShared);
   const ownOccurrences = useMemo(() => expandSafely(events,range), [events,range]);
   const peerOccurrences = useMemo(() => expandSafely(peerPlanner.events,range), [peerPlanner.events,range]);
+  const openAndroidRecord=useCallback(key=>{
+    setSelectedOwner('me');setCompare(false);
+    if(key.startsWith('events:')){const record=events.find(row=>row.id===key.slice(7));if(record)setEventEditor(record);}
+    if(key.startsWith('tasks:')||key.startsWith('steps:')){const id=key.slice(6).split('/')[0],record=tasks.find(row=>row.id===id);if(record)setSelected({...record,viewerOwner:'me'});}
+  },[events,tasks]);
+  const androidAgenda=useAndroidAgenda({user,demo,authLoading,ready:ownReady,events,tasks,onOpen:openAndroidRecord});
 
   useEffect(() => onAuthStateChanged(auth, next => {
     setUser(next); setDemo(false); setEvents([]); setTasks([]); setExternal([]); setOwnReady(false); setSelectedOwner('me'); setCompare(false); setClassOpen(false); setError(''); setSelected(null); setEventEditor(null); setReadEvent(null); setShareOpen(false); setAuthLoading(false);
@@ -145,6 +155,7 @@ export default function App() {
       <div className="profile"><Avatar user={activeUser}/><div><b>{activeUser.displayName}</b><small>{activeUser.email}</small></div><button className="icon-btn" aria-label="Đăng xuất" onClick={logout}><LogOut size={18}/></button></div>
     </div></header>
     <main>
+      {isAndroid&&<div className="android-ribbon"><button className="soft-btn" onClick={()=>setAndroidOpen(true)}>Widget & nhắc việc</button>{androidAgenda.error&&<p role="alert">{androidAgenda.error}</p>}</div>}
       {demo && <div className="notice" role="status">Bản demo — thay đổi chỉ lưu trong phiên này. Đăng nhập Google để lưu dữ liệu thật.</div>}
       {(error || scopeError) && <div className="error-banner" role="alert">{scopeError || error}{!scopeError && <button className="text-btn" onClick={() => setError('')}>Đóng</button>}</div>}
       <section className="hero-strip"><div><span className="eyebrow">{viewingShared ? 'SHARED PLANNER · READ ONLY' : 'YOUR PERSONAL PLANNING SPACE'}</span><h1>{viewingShared ? `Planner của ${peerName}` : 'Planner'}</h1><p><Droplets size={18}/>{viewingShared ? 'Toàn bộ lịch & công việc được chia sẻ' : 'Flow of Knowledge'}<span className="hero-divider"/>{viewingShared ? 'Chỉ xem' : 'Lịch, công việc & nhịp sống của bạn'}</p></div>
@@ -171,5 +182,6 @@ export default function App() {
     {!viewingShared && eventEditor && <AddEventModal key={eventEditor.id || 'new'} item={eventEditor.id ? eventEditor : null} initialDate={eventEditor.initialDate || dateKey(days[0])} onClose={() => setEventEditor(null)} onAdd={(data, id) => saveRecord('events', data, id)} onDelete={id => removeRecord('events', id)}/>}
     {selectedEvent && <EventDetails item={selectedEvent} onClose={() => setReadEvent(null)}/>}
     {!viewingShared && shareOpen && <ShareModal user={user} demo={demo} onClose={() => setShareOpen(false)}/>}
+    {isAndroid&&androidOpen&&<AndroidSettings events={events} tasks={tasks} onClose={()=>setAndroidOpen(false)} onUpdate={androidAgenda.refresh}/>}
   </div>;
 }

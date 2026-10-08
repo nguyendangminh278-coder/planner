@@ -3,6 +3,8 @@ export const authSetupErrors = new Set(['auth/configuration-not-found', 'auth/op
 export function firebaseError(error) {
   const code = (error?.code || '').replace('auth/', '').replace('firestore/', '');
   const messages = {
+    'ANDROID_GOOGLE_SETUP': 'Bản Android cần được đăng ký trong Firebase với đúng package và SHA-1 của APK để đăng nhập Google.',
+    'ANDROID_GOOGLE_AUTH': 'Đăng nhập Google trên Android chưa hoàn tất. Chọn tài khoản và thử lại; nếu vẫn lỗi, kiểm tra cấu hình Firebase của APK.',
     'configuration-not-found': 'Firebase chưa có cấu hình Authentication cho đăng nhập Google. Mở Firebase Console → Authentication → Get started, sau đó bật Google trong Sign-in method và lưu.',
     'popup-closed-by-user': 'Bạn đã đóng cửa sổ đăng nhập. Hãy thử lại.',
     'popup-blocked': 'Trình duyệt chặn cửa sổ đăng nhập. Hãy cho phép popup cho Planner rồi thử lại.',

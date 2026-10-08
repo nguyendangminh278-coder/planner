@@ -9,3 +9,6 @@ dist-pages/
 *-debug.log*
 coverage/
 test-results/
+artifacts/
+*.jks
+*.keystore

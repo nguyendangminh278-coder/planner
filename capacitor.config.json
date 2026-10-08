@@ -1,0 +1,7 @@
+{
+  "appId": "com.nguyendangminh.planner",
+  "appName": "Planner",
+  "webDir": "dist",
+  "android": { "allowMixedContent": false },
+  "server": { "androidScheme": "https" }
+}

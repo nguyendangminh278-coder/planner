@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CalendarDays, CheckCircle2, Users } from 'lucide-react';
 import { auth, googleProvider, signInWithPopup, firebaseError } from '../lib/firebase';
 import { authSetupErrors } from '../lib/firebaseMessages';
+import {googleLogin} from '../lib/android';
 
 export default function Login({ onDemo }) {
   const [busy, setBusy] = useState(false);
@@ -11,7 +12,7 @@ export default function Login({ onDemo }) {
   localhostURL.hostname = 'localhost';
   async function login() {
     setBusy(true); setError(''); setErrorCode('');
-    try { await signInWithPopup(auth, googleProvider); }
+    try { await googleLogin(auth, googleProvider,signInWithPopup); }
     catch (err) { setError(firebaseError(err)); setErrorCode(err.code || ''); }
     finally { setBusy(false); }
   }
