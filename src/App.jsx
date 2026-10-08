@@ -193,4 +193,3 @@ export default function App() {
     {isAndroid&&androidOpen&&<AndroidSettings events={events} tasks={tasks} onClose={()=>setAndroidOpen(false)} onUpdate={androidAgenda.refresh}/>}
   </div>;
 }
-
