@@ -29,7 +29,7 @@ Credential Manager uses the generated `default_web_client_id` server client ID. 
 
 ## Build an APK
 
-Validation (8 October 2026): web build/Capacitor sync and 58 web tests pass; all 7 native agenda tests pass. Gradle `testDebugUnitTest lintDebug assembleDebug` passes, with zero app lint errors (remaining hints include widget sizing compatibility and string resources). APK signature matches the Firebase certificate. The APK was installed through ADB on Nothing Phone (2a) Plus, Android 16/API 36; PackageManager confirms the launch activity and AppWidgetManager confirms both providers. Google account selection and notification/exact-alarm grants require the user's first-run interaction.
+Validation (8 October 2026): web build/Capacitor sync and 58 web tests pass; all 7 native agenda tests pass. Gradle `testDebugUnitTest lintDebug assembleDebug` passes, with zero app lint errors (remaining hints include widget sizing compatibility and string resources). APK signature matches the Firebase certificate. The APK was installed through ADB on Nothing Phone (2a) Plus, Android 16/API 36; PackageManager confirms the launch activity and AppWidgetManager confirms both providers. The user confirmed successful on-device Google sign-in, and the native widget snapshot contains the signed-in account's events/tasks with a sync timestamp. Notification/exact-alarm grants and adding widgets require the user's first-run interaction; alarm delivery and the Nothing OS lock-screen picker have not yet been exercised on this phone.
 
 Firebase BoM 34.14.1 is pinned for compatibility with Capacitor 8's bundled Kotlin metadata tooling. Guava is a direct compile dependency because WorkManager exposes ListenableFuture while Firebase selects its empty compatibility artifact.
 
