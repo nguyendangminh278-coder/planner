@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "894299121899",
+    "project_id": "calendar-f3d1b",
+    "storage_bucket": "calendar-f3d1b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:894299121899:android:0edbdcb515e046ff9576ae",
+        "android_client_info": {
+          "package_name": "com.nguyendangminh.planner"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "894299121899-mvtl4r36die37nv1hdtad04jkuga5jsj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.nguyendangminh.planner",
+            "certificate_hash": "960cf7b4a35dd3c75e59d74e4659b0b9f41ae22a"
+          }
+        },
+        {
+          "client_id": "894299121899-v5cmdpb1j2qk28ip8imkbcto05in54kl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnrMAWW1-Ming_gcBShuqVB1gCurFBPn0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "894299121899-v5cmdpb1j2qk28ip8imkbcto05in54kl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

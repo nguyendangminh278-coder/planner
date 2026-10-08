@@ -17,7 +17,7 @@ The APK packages the React UI locally. Firebase/Firestore and class data still u
 
 ## Firebase Android registration
 
-Register package `com.nguyendangminh.planner` in `calendar-f3d1b`, with the certificate of the APK being built. Download `google-services.json` to `android/app/google-services.json`. Do not invent an OAuth client ID or reuse an Android client ID as a server client ID.
+Registered package `com.nguyendangminh.planner` in `calendar-f3d1b`: app ID `1:894299121899:android:0edbdcb515e046ff9576ae`. The checked-in `android/app/google-services.json` includes Android and web OAuth clients. Both certificate fingerprints below are registered. When using a different signing certificate, register its SHA-1/SHA-256 and download the updated configuration. Firebase mobile config contains public client identifiers, not an administrative secret.
 
 This machine's dedicated debug certificate lives outside the repository at `%LOCALAPPDATA%/PlannerAndroidTools/planner-debug.keystore` (development only).
 
@@ -25,11 +25,13 @@ SHA-1: `96:0C:F7:B4:A3:5D:D3:C7:5E:59:D7:4E:46:59:B0:B9:F4:1A:E2:2A`
 
 SHA-256: `DC:AA:2F:53:AC:6E:91:58:D5:E5:78:AC:EB:CE:26:81:CB:D0:48:8D:BF:F2:0B:8C:F3:53:C0:20:80:BA:B8:B3`
 
-The Firebase web config fallback supports loading the demo/native UI before registration, but Google login deliberately reports missing configuration until the Android config exists.
+Credential Manager uses the generated `default_web_client_id` server client ID. It signs into native Firebase and exchanges the same Google credential with the web SDK, so widgets/background sync and the React UI use the same account.
 
 ## Build an APK
 
-Current validation (8 October 2026): web build/Capacitor sync pass, 58 web tests pass and 7 pure Java agenda tests pass. Gradle resolves native dependencies. Full `assembleDebug` currently stops with **SDK location not found**; APK/native integration lint/runtime checks are still pending. Firebase Console currently denies project access in the available session, so Android Google registration/configuration is also pending. No APK has been produced at this stage.
+Validation (8 October 2026): web build/Capacitor sync and 58 web tests pass; all 7 native agenda tests pass. Gradle `testDebugUnitTest lintDebug assembleDebug` passes, with zero app lint errors (remaining hints include widget sizing compatibility and string resources). APK signature matches the Firebase certificate. The APK was installed through ADB on Nothing Phone (2a) Plus, Android 16/API 36; PackageManager confirms the launch activity and AppWidgetManager confirms both providers. Google account selection and notification/exact-alarm grants require the user's first-run interaction.
+
+Firebase BoM 34.14.1 is pinned for compatibility with Capacitor 8's bundled Kotlin metadata tooling. Guava is a direct compile dependency because WorkManager exposes ListenableFuture while Firebase selects its empty compatibility artifact.
 
 Install JDK 21 and Android SDK platform 36, build-tools 36.0.0 and platform-tools from the official vendors. The SDK license must be accepted by the user. Then:
 
