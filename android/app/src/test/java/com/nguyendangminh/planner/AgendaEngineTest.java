@@ -38,4 +38,26 @@ public class AgendaEngineTest {
         for(int i=0;i<400;i++){String key="tasks:"+i;long time=now.plusSeconds(60L*(400-i)).toEpochMilli();rows.add(new AgendaEngine.Entry(key,key,time,time+60000,false,false,"Việc"));rules.put(key,new JSONObject().put("enabled",true).put("minutesBefore",0));}
         var plan=AgendaEngine.reminders(rows,settings,now,zone);assertEquals(256,plan.size());assertEquals(now.plusSeconds(60).toEpochMilli(),plan.get(0).at());assertEquals(256,plan.stream().map(AgendaEngine.Reminder::id).distinct().count());
     }
+    @Test public void ongoingTaskCanRemindTwoHoursBeforeItsDeadlineWithPhoneRingtone()throws Exception{
+        var row=new AgendaEngine.Entry("tasks:t","Running task",now.minusSeconds(3600).toEpochMilli(),now.plusSeconds(4*3600).toEpochMilli(),false,false,"Việc");
+        var plan=AgendaEngine.reminders(List.of(row),options("tasks:t","\"anchor\":\"end\",\"minutesBefore\":120,\"soundMode\":\"ringtone\""),now,zone);
+        assertEquals(1,plan.size());assertEquals(now.plusSeconds(2*3600).toEpochMilli(),plan.get(0).at());assertEquals("ringtone",plan.get(0).soundMode());assertTrue(plan.get(0).body().contains("Kết thúc"));
+    }
+    @Test public void globalAndPerRecordStopsLeaveNoPendingAlarms()throws Exception{
+        var rows=List.of(new AgendaEngine.Entry("events:e","Event",now.plusSeconds(7200).toEpochMilli(),now.plusSeconds(10800).toEpochMilli(),false,false,"Lịch"));
+        JSONObject settings=options("events:e","\"minutesBefore\":60");assertEquals(1,AgendaEngine.reminders(rows,settings,now,zone).size());settings.put("remindersEnabled",false);assertEquals(0,AgendaEngine.reminders(rows,settings,now,zone).size());settings.put("remindersEnabled",true);settings.getJSONObject("reminders").getJSONObject("events:e").put("enabled",false);assertEquals(0,AgendaEngine.reminders(rows,settings,now,zone).size());
+    }
+    @Test public void allDayDeadlineLeadMayCrossMidnightButLegacyClockStaysUnchanged()throws Exception{
+        var rows=AgendaEngine.expand(source("[]","[{\"id\":\"t\",\"title\":\"Task\",\"start\":\"2026-10-08\",\"end\":\"2026-10-09\"}]"),now,zone);
+        var settings=options("tasks:t","\"anchor\":\"end\",\"allDayTime\":\"01:00\",\"allDayLead\":true,\"minutesBefore\":120");var plan=AgendaEngine.reminders(rows,settings,now,zone);assertEquals(1,plan.size());assertEquals(Instant.parse("2026-10-08T16:00:00Z").toEpochMilli(),plan.get(0).at());
+        settings.getJSONObject("reminders").getJSONObject("tasks:t").remove("allDayLead");assertEquals(Instant.parse("2026-10-08T18:00:00Z").toEpochMilli(),AgendaEngine.reminders(rows,settings,now,zone).get(0).at());
+    }
+    @Test public void sevenDayLeadIncludesAnOccurrenceBeyondTheSchedulingWindow()throws Exception{
+        String date=now.plus(Duration.ofDays(32)).atZone(zone).toLocalDate().toString();var data=source("[{\"id\":\"e\",\"title\":\"Event\",\"start\":\""+date+"T09:00:00+07:00\",\"end\":\""+date+"T10:00:00+07:00\"}]","[]");
+        var plan=AgendaEngine.reminders(data,options("events:e","\"minutesBefore\":10080"),now,zone);assertEquals(1,plan.size());assertTrue(plan.get(0).at()<now.plus(Duration.ofDays(30)).toEpochMilli());
+    }
+    @Test public void aFarFutureTaskCanHaveASoonerCustomOneShotButCompletedWorkCannot()throws Exception{
+        var data=source("[]","[{\"id\":\"t\",\"title\":\"Future\",\"start\":\"2027-01-01\",\"end\":\"2027-01-02\"}]");var settings=options("tasks:t","\"customAt\":\"2026-10-08T09:00\",\"soundMode\":\"silent\"");
+        var plan=AgendaEngine.reminders(data,settings,now,zone);assertEquals(1,plan.size());assertEquals("silent",plan.get(0).soundMode());data.getJSONArray("tasks").getJSONObject(0).put("progress",100);assertEquals(0,AgendaEngine.reminders(data,settings,now,zone).size());
+    }
 }

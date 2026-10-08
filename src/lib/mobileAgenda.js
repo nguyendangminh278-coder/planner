@@ -5,5 +5,5 @@ export function mobileRecords(events, tasks) {
   return {events:events.filter(row => !row.source).map(pick),tasks:tasks.filter(row => !row.source).map(row => ({...pick(row),steps:(row.steps || []).map(pick)}))};
 }
 export function reminderCatalog(events,tasks) {
-  return [...events.filter(row => !row.source).map(row => ({key:`events:${row.id}`,title:row.title,kind:'Lịch'})),...tasks.filter(row => !row.source).flatMap(row => [{key:`tasks:${row.id}`,title:row.title,kind:'Công việc',completed:row.progress>=100},...(row.steps || []).map((step,index) => ({key:`steps:${row.id}/${step.id}`,title:`${row.title} · ${index+1}. ${step.title}`,kind:'Bước',completed:step.progress>=100 || row.progress>=100}))])];
+  return [...events.filter(row => !row.source).map(row => ({key:`events:${row.id}`,title:row.title,kind:'Lịch',allDay:row.allDay===true})),...tasks.filter(row => !row.source).flatMap(row => [{key:`tasks:${row.id}`,title:row.title,kind:'Công việc',allDay:row.allDay!==false,completed:row.progress>=100},...(row.steps || []).map((step,index) => ({key:`steps:${row.id}/${step.id}`,title:`${row.title} · ${index+1}. ${step.title}`,kind:'Bước',allDay:step.allDay!==false,completed:step.progress>=100 || row.progress>=100}))])];
 }

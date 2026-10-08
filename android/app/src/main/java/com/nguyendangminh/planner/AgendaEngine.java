@@ -9,9 +9,9 @@ import java.util.stream.Collectors;
 
 /** Pure calendar math shared by widgets, background sync and local alarms. */
 public final class AgendaEngine {
-    public static final int HORIZON_DAYS=30, MAX_ALARMS=256;
+    public static final int HORIZON_DAYS=30, MAX_ALARMS=256, MAX_LEAD_MINUTES=10080;
     public record Entry(String key,String title,long start,long end,boolean allDay,boolean completed,String kind) {}
-    public record Reminder(int id,String key,String title,String body,long at) {}
+    public record Reminder(int id,String key,String title,String body,long at,String soundMode) {}
     static ZoneId zone(JSONObject row,ZoneId fallback){try{return ZoneId.of(row.optString("timeZone",fallback.getId()));}catch(Exception e){return fallback;}}
     static ZonedDateTime stamp(String value,ZoneId zone){try{return OffsetDateTime.parse(value).atZoneSameInstant(zone);}catch(Exception e){return LocalDateTime.parse(value).atZone(zone);}}
     static boolean matches(LocalDate day,LocalDate anchor,JSONObject rule){
@@ -33,7 +33,7 @@ public final class AgendaEngine {
     public static List<Entry> expand(JSONObject source,Instant now,ZoneId viewer){
         List<Entry> result=new ArrayList<>();
         long low=now.atZone(viewer).toLocalDate().atStartOfDay(viewer).toInstant().toEpochMilli();
-        long high=now.atZone(viewer).toLocalDate().plusDays(HORIZON_DAYS+1).atStartOfDay(viewer).toInstant().toEpochMilli();
+        long high=now.atZone(viewer).toLocalDate().plusDays(HORIZON_DAYS+8).atStartOfDay(viewer).toInstant().toEpochMilli();
         JSONArray events=source.optJSONArray("events");
         if(events!=null)for(int i=0;i<events.length();i++)try{
             JSONObject row=events.getJSONObject(i);ZoneId zone=zone(row,viewer);
@@ -85,28 +85,60 @@ public final class AgendaEngine {
         return rows.stream().filter(row->row.start<b&&row.end>a).sorted(Comparator.comparing(Entry::completed).thenComparing(row->!row.allDay).thenComparingLong(Entry::start)).collect(Collectors.toList());
     }
     public static List<Reminder> reminders(List<Entry> rows,JSONObject settings,Instant now,ZoneId zone){
-        List<Reminder> out=new ArrayList<>();JSONObject rules=settings.optJSONObject("reminders");if(rules==null)return out;
+        List<Reminder> out=new ArrayList<>();JSONObject rules=settings.optJSONObject("reminders");if(!settings.optBoolean("remindersEnabled",true)||rules==null)return out;
         Set<String> unique=new HashSet<>();long time=now.toEpochMilli(),max=now.plus(Duration.ofDays(HORIZON_DAYS)).toEpochMilli();
         for(Entry row:rows){
             JSONObject rule=rules.optJSONObject(row.key);if(row.completed||rule==null||!rule.optBoolean("enabled"))continue;
             String custom=rule.optString("customAt","");
+            boolean endAnchor="end".equals(rule.optString("anchor","start"));
+            int lead=Math.max(0,Math.min(MAX_LEAD_MINUTES,rule.optInt("minutesBefore",15)));
+            String sound=soundMode(rule.optString("soundMode","notification"));
             try{
-                if(!custom.trim().isEmpty()){long at=LocalDateTime.parse(custom).atZone(zone).toInstant().toEpochMilli();addReminder(out,unique,row,at,time,max);}
+                if(!custom.trim().isEmpty()){long at=LocalDateTime.parse(custom).atZone(zone).toInstant().toEpochMilli();addReminder(out,unique,row,at,time,max,sound,"Giờ hẹn riêng");}
                 else if(row.allDay){
                     LocalDate a=Instant.ofEpochMilli(Math.max(row.start,time)).atZone(zone).toLocalDate(),b=Instant.ofEpochMilli(row.end-1).atZone(zone).toLocalDate();
                     LocalTime clock=LocalTime.parse(rule.optString("allDayTime","09:00"));
-                    // All-day work spans daily reminders; an all-day event only reminds on its first date.
+                    // Legacy all-day rules used the clock directly and ignored minutesBefore.
+                    int allDayLead=rule.optBoolean("allDayLead",false)?lead:0;
                     if(row.key.startsWith("events:")){a=Instant.ofEpochMilli(row.start).atZone(zone).toLocalDate();b=a;}
-                    for(LocalDate date=a;!date.isAfter(b)&&!date.isAfter(now.atZone(zone).toLocalDate().plusDays(HORIZON_DAYS));date=date.plusDays(1))addReminder(out,unique,row,date.atTime(clock).atZone(zone).toInstant().toEpochMilli(),time,max);
-                }else addReminder(out,unique,row,row.start-Math.max(0,Math.min(120,rule.optInt("minutesBefore",15)))*60000L,time,max);
+                    if(endAnchor){a=Instant.ofEpochMilli(row.end-1).atZone(zone).toLocalDate();b=a;}
+                    for(LocalDate date=a;!date.isAfter(b)&&!date.isAfter(now.atZone(zone).toLocalDate().plusDays(HORIZON_DAYS+7));date=date.plusDays(1))addReminder(out,unique,row,date.atTime(clock).atZone(zone).toInstant().toEpochMilli()-allDayLead*60000L,time,max,sound,(endAnchor?"Hạn cuối":"Mốc cả ngày")+" "+clock);
+                }else{
+                    long anchor=endAnchor?row.end:row.start;
+                    addReminder(out,unique,row,anchor-lead*60000L,time,max,sound,(endAnchor?"Kết thúc ":"Bắt đầu ")+Instant.ofEpochMilli(anchor).atZone(zone).toLocalTime().withSecond(0));
+                }
             }catch(Exception ignored){}
         }
         out.sort(Comparator.comparingLong(Reminder::at));if(out.size()>MAX_ALARMS)out=new ArrayList<>(out.subList(0,MAX_ALARMS));
-        List<Reminder> numbered=new ArrayList<>();for(int i=0;i<out.size();i++){Reminder r=out.get(i);numbered.add(new Reminder(1000+i,r.key,r.title,r.body,r.at));}return numbered;
+        List<Reminder> numbered=new ArrayList<>();for(int i=0;i<out.size();i++){Reminder r=out.get(i);numbered.add(new Reminder(1000+i,r.key,r.title,r.body,r.at,r.soundMode));}return numbered;
     }
-    static void addReminder(List<Reminder> out,Set<String> seen,Entry row,long at,long low,long high){
+    public static String soundMode(String value){return Arrays.asList("notification","ringtone","alarm","silent").contains(value)?value:"notification";}
+    public static List<Reminder> reminders(JSONObject source,JSONObject settings,Instant now,ZoneId zone){
+        if(!settings.optBoolean("remindersEnabled",true))return new ArrayList<>();
+        List<Entry> rows=new ArrayList<>(expand(source,now,zone));JSONObject rules=settings.optJSONObject("reminders");
+        if(rules!=null){
+            JSONArray events=source.optJSONArray("events"),tasks=source.optJSONArray("tasks");
+            if(events!=null)for(int i=0;i<events.length();i++)try{
+                JSONObject row=events.getJSONObject(i);if(!customRule(rules,"events:"+row.getString("id")))continue;
+                ZoneId original=zone(row,zone);ZonedDateTime a=stamp(row.getString("start"),original),b=stamp(row.getString("end"),original);
+                if(b.isAfter(a))addEvent(rows,row,a,b,row.optBoolean("allDay"),(int)Math.max(1,ChronoUnit.DAYS.between(a.toLocalDate(),b.toLocalDate())),zone,Long.MIN_VALUE,Long.MAX_VALUE);
+            }catch(Exception ignored){}
+            if(tasks!=null)for(int i=0;i<tasks.length();i++)try{
+                JSONObject row=tasks.getJSONObject(i);boolean complete=row.optInt("progress")>=100;String key="tasks:"+row.getString("id");
+                if(customRule(rules,key))addTask(rows,row,key,row.getString("title"),complete,zone,Long.MIN_VALUE,Long.MAX_VALUE);
+                JSONArray steps=row.optJSONArray("steps");if(steps!=null)for(int j=0;j<steps.length();j++){
+                    JSONObject step=steps.getJSONObject(j);key="steps:"+row.getString("id")+"/"+step.getString("id");if(!customRule(rules,key))continue;
+                    if(!step.has("timeZone"))step=new JSONObject(step.toString()).put("timeZone",row.optString("timeZone",zone.getId()));
+                    addTask(rows,step,key,row.getString("title")+" · "+step.getString("title"),complete||step.optInt("progress")>=100,zone,Long.MIN_VALUE,Long.MAX_VALUE);
+                }
+            }catch(Exception ignored){}
+        }
+        return reminders(rows,settings,now,zone);
+    }
+    static boolean customRule(JSONObject rules,String key){JSONObject rule=rules.optJSONObject(key);return rule!=null&&rule.optBoolean("enabled")&&!rule.optString("customAt","").trim().isEmpty();}
+    static void addReminder(List<Reminder> out,Set<String> seen,Entry row,long at,long low,long high,String sound,String detail){
         if(at<=low||at>high||!seen.add(row.key+"@"+at))return;
-        out.add(new Reminder(0,row.key,row.title,row.kind+" · "+(row.allDay?"Cả ngày":"Bắt đầu "+Instant.ofEpochMilli(row.start).atZone(ZoneId.systemDefault()).toLocalTime().withSecond(0)),at));
+        out.add(new Reminder(0,row.key,row.title,row.kind+" · "+detail,at,sound));
     }
 }
 
